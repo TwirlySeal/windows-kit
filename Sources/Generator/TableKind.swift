@@ -1,3 +1,6 @@
+/// Raw values are the positions within bit sets such as Valid and Sorted that
+/// correspond to each table
+///
 /// See ECMA-335 II.22 - Metadata logical format: tables
 enum TableKind: Int {
 	case assembly = 0x20

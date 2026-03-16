@@ -1,0 +1,40 @@
+<h1 id="binary-parsing">Binary Parsing</h1>
+<p>Binary formats are not human readable, meaning we must parse them
+using code to discover the information inside. We use a library called
+Swift Binary Parsing to do this.</p>
+<p>Resource: <a
+href="https://apple.github.io/swift-binary-parsing/documentation/binaryparsing/gettingstarted">Getting
+Started with BinaryParsing</a></p>
+<h1 id="cli-metadata-format">CLI metadata format</h1>
+<p>There are two ways metadata is stored in WinMD files:</p>
+<ol type="1">
+<li><p>Tables (arrays of records)</p></li>
+<li><p>Heaps</p></li>
+</ol>
+<p>Heaps are unstructured data regions, so information can only be
+extracted if you know its position and size within the heap.</p>
+<figure>
+<img src="./heap.svg" alt="Heap structure diagram" />
+<figcaption aria-hidden="true">Heap structure diagram</figcaption>
+</figure>
+<p>Tables have a variable number of rows, which have a defined number of
+columns. Tables, rows, and columns are all packed consecutively. Each
+table represents a concept in an API; for example, the ‘Field’ table
+represents a field in a type definition, while the ‘FieldLayout’ table
+represents the layout of fields in a type.</p>
+<figure>
+<img src="./tables.svg" alt="Table structure diagram" />
+<figcaption aria-hidden="true">Table structure diagram</figcaption>
+</figure>
+<p>There are two types of columns in table rows:</p>
+<ol type="1">
+<li><p>Constant - A literal value or bitmask</p></li>
+<li><p>Index - An index to a row in the same or another table.</p></li>
+</ol>
+<p>A bitmask constant is a value that stores</p>
+<p>There are two types of indices:</p>
+<ol type="1">
+<li>Simple - an index into one, and only one, table</li>
+<li>Complex - an index into one of several tables. A few bits of the
+index value are reserved to define which table it targets.</li>
+</ol>
