@@ -13,11 +13,13 @@ Unless otherwise stated, the format is in little endian.
 
 There are two ways metadata is stored in WinMD files:
 
-1.  Tables (arrays of records) - ECMA-335 page 235
+1.  Tables (arrays of records)
 
-2.  Heaps - ECMA-335 page 298
+2.  Heaps
 
 # Tables
+
+> See ‘II.22 Metadata logical format: tables’ for more information
 
 A table has a variable number of rows with a defined set of columns. The size of
 each row is known, so we can multiply it by a row index to get the offset for
@@ -43,6 +45,8 @@ There are two types of indices:
 
 # Heaps
 
+> See ‘II.24.2.2 Stream header’ for more information.
+
 Heaps are variable-length data regions where data is accessed via a byte offset.
 The length or end of data in a heap is needed to know where to stop reading.
 
@@ -66,3 +70,24 @@ variable-length encoding; the first few bits signal the total byte length of the
 number so that smaller numbers can be represented using fewer bytes. Compressed
 integers are encoded in big-endian (i.e. with the most significant byte at the
 smallest offset within the file) so that the length bits can be read first.
+
+# Notation
+
+> See ‘§II.5 General Syntax’ for more information.
+
+The spec uses a modified form of the [Backus-Naur
+form](https://en.wikipedia.org/wiki/Backus–Naur_form) syntax notation to
+describe the structure of signatures. Here is a summary:
+
+- `::=` means “is defined as”
+
+- `|` means OR
+
+- `*` means one or more of the preceding element
+
+The spec also uses [Syntax
+Diagrams](https://en.wikipedia.org/wiki/Syntax_diagram).
+
+- Parallel tracks represent alternatives
+
+- Looped tracks mean one or more
