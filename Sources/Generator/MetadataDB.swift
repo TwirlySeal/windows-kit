@@ -11,11 +11,11 @@ import BinaryParsing
 /// View structs go in the Tables folder
 class MetadataDB {
 	private let data: Data
-	let ranges: MetadataRanges
+	let ranges: MetadataInfo
 
-	init(at path: FilePath) throws {
-		data = try File(at: path).readAll()
-		ranges = try data.withParserSpan { try parseWinMD(&$0) }
+	init(data: Data) throws {
+		self.data = data
+		self.ranges = try data.withParserSpan { try MetadataInfo(parsing: &$0) }
 	}
 
 	/// Parse one row of a table

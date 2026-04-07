@@ -9,9 +9,10 @@ let package = Package(
     ],
 
     dependencies: [
-        .package(url: "https://github.com/apple/swift-binary-parsing", branch: "main"),
-        .package(url: "https://github.com/apple/swift-system", branch: "main"),
-        .package(url: "https://github.com/apple/swift-algorithms", branch: "main"),
+        .package(url: "https://github.com/apple/swift-binary-parsing", "0.0.1"..."0.0.2"),
+        .package(url: "https://github.com/apple/swift-system", from: "1.6.4"),
+        .package(url: "https://github.com/apple/swift-algorithms", from: "1.2.1"),
+        .package(url: "https://github.com/tsolomko/SWCompression", from: "4.8.0")
     ],
 
     targets: [
@@ -21,6 +22,7 @@ let package = Package(
                 .product(name: "BinaryParsing", package: "swift-binary-parsing"),
                 .product(name: "SystemPackage", package: "swift-system"),
                 .product(name: "Algorithms", package: "swift-algorithms"),
+                .product(name: "SWCompression", package: "SWCompression")
             ],
             swiftSettings: [
                 .enableExperimentalFeature("Lifetimes"),

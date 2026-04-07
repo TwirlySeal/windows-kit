@@ -8,7 +8,7 @@ struct TypeDef {
 	init(metadata: MetadataDB, rowIndex: Int) throws {
 		self.metadata = metadata
 		
-		(flags, typeNameIndex) = try metadata.withTableSpan(for: .typeDef, rowIndex: rowIndex) { span in
+		(flags, typeNameIndex) = try metadata.withRowSpan(in: .typeDef, rowIndex: rowIndex) { span in
 			guard
 				let flags = TypeAttributes(rawValue: try UInt32(parsingLittleEndian: &span))
 			else {
