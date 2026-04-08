@@ -3,15 +3,15 @@ import BinaryParsing
 struct Assembly {
     // All of the metadata within the assembly table
     let metadata: MetadataDB
-    let hashAlgId: AssemblyHashAlgorithm
+    let hashAlgorithm: AssemblyHashAlgorithm
     let majorVersion UInt16
     let minorVersion UInt16
-    let buildNumber UInt16
-    let revisionNumber UInt16
+    let buildNumber: UInt16
+    let revisionNumber: UInt16
     let flags: AssemblyFlags UInt32
-    let publicKeyIndex UInt32
-    let typeNameIndex
-    let cultureIndex UInt32
+    let publicKeyIndex: UInt32
+    let typeNameIndex: UInt32
+    let cultureIndex: UInt32
 
     // Initialisation/parsing function I guess
     init(metadata: MetadataDB, rowIndex: Int) throws {
@@ -31,7 +31,7 @@ struct Assembly {
             cultureIndex
 
         ) = try metadata.withTableSpan(for: . assembly, rowIndex: rowIndex) // metadata is all the data that we'll be reading, withTableSpan, span is the range of bits we'll be parsing
-        {
+        {span in
           
             // read the raw bytes which represent HashAlgId
             let hashAlgIdRaw = try UInt32(parsingLittleEndian: &span)
@@ -45,7 +45,7 @@ struct Assembly {
             // parse four 2-byte (16 bit) values stored in the assembly column
             let majorVersion = try UInt16(parsingLittleEndian: &span)
             let minorVersion = try UInt16(parsingLittleEndian: &span)
-            let buildVersion = try UInt16(parsingLittleEndian: &span)
+            let buildNumber = try UInt16(parsingLittleEndian: &span)
             let revisionNumber = try UInt16(parsingLittleEndian: &span)
 
             // read raw bytes of flagsRaw
@@ -62,16 +62,16 @@ struct Assembly {
 
 
             // return all parsed values
-            return {
+            return (
                 hashAlgId, 
                 majorVersion,
                 minorVersion, 
-                buildVersion,
+                buildNumber,
                 revisionNumber,
                 flags, 
                 typeNameIndex,
                 cultureIndex
-            }
+            )
         }
 
         
