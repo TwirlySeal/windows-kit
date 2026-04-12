@@ -1,7 +1,7 @@
 // import SystemPackage
 import Foundation
 import FoundationNetworking
-import SWCompression
+import Zip
 
 func download(url: URL) async throws -> Data {
 	let (data, response) = try await URLSession.shared.data(from: url)
@@ -38,6 +38,9 @@ let packageID = "Microsoft.Windows.SDK.Contracts"
 let packageVersion = "10.0.28000.1721"
 let cacheDirectoryName = ".winmd-cache"
 
+/// https://learn.microsoft.com/en-us/nuget/api/overview
+/// https://learn.microsoft.com/en-us/nuget/api/service-index
+/// https://learn.microsoft.com/en-us/nuget/api/package-base-address-resource
 func getPackageDownloadURL() async throws -> URL {
 	let indexURL = URL(string: "https://api.nuget.org/v3/index.json")!
 	let data = try await download(url: indexURL)
@@ -66,30 +69,40 @@ let contents = try await download(url: packageResourceURL)
 let cacheURL = URL(fileURLWithPath: FileManager.default.currentDirectoryPath).appendingPathComponent(cacheDirectoryName)
 try FileManager.default.createDirectory(at: cacheURL, withIntermediateDirectories: true)
 
-try contents.write(to: cacheURL.appendingPathComponent("contracts.zip"))
-
-let zip = try ZipContainer.open(container: contents)
-
-for entry in zip {
-	let path = entry.info.name
-	print(path)
-
- guard path.hasPrefix("ref/netstandard2.0"),
- 	path.hasSuffix(".winmd"),
- 	entry.info.type == .regular
- else {
- 	continue
- }
-
- let filename = URL(fileURLWithPath: path).lastPathComponent
- let destinationURL = cacheURL.appendingPathComponent(filename)
-
- if let fileData = entry.data {
- 	try fileData.write(to: destinationURL)
- }
+do {
+	try parseZip(bytes: contents.span)
+} catch {
+	print(error)
 }
+// try contents.withParserSpan { try parseZip(span: &$0) }
+// try contents.write(to: cacheURL.appendingPathComponent("contracts.zip"))
 
-print("Parsing first metadata file")
-if let firstData = zip.first?.data {
-	let metadata = try MetadataDB(data: firstData)
-}
+// print("Extracting nupkg")
+// let zip = try ZipContainer.open(container: contents)
+// print("Extracted")
+
+// for entry in zip {
+// 	let path = entry.info.name
+
+//  guard path.hasPrefix("ref/netstandard2.0"),
+//  	path.hasSuffix(".winmd"),
+//  	entry.info.type == .regular
+//  else {
+//  	continue
+//  }
+
+//  let filename = URL(fileURLWithPath: path).lastPathComponent
+//  let destinationURL = cacheURL.appendingPathComponent(filename)
+
+//  if let fileData = entry.data {
+//  	try fileData.write(to: destinationURL)
+//  }
+// }
+
+// print("Parsing first metadata file")
+// if let firstData = zip.first?.data {
+// 	if let magicNumber = String(data: firstData.prefix(3), encoding: .ascii) {
+// 		print(magicNumber)
+// 	}
+// 	let metadata = try MetadataDB(data: firstData)
+// }

@@ -1,5 +1,4 @@
 import Foundation
-import SystemPackage
 import BinaryParsing
 
 /// Manages the binary data of a metadata file and information needed to parse
