@@ -39,4 +39,22 @@ class MetadataDB {
 			return try String(parsingNulTerminated: &span)
 		}
 	}
+    
+//    static func decompressInteger(input: inout ParserSpan) throws -> UInt8 {
+//        let oneByteMask: UInt = 0b1000_0000
+//        let twoByteMask: UInt = 0b1100_0000
+//        let fourByteMask: UInt = 0b1110_0000
+//
+//        let firstByte = try UInt8(parsingLittleEndian: &input, byteCount: 1)
+//
+//        return if firstByte & oneByteMask == 0 {
+//            firstByte
+//        } else if firstByte & twoByteMask == 0b1000_0000 {
+//            ((nums[0] & 0b0011_1111) << 8) | nums[1]
+//        } else if firstByte & fourByteMask == 0b1100_0000 {
+//            ((nums[0] & 0b0001_1111) << 24) | (nums[1] << 16) | (nums[2] << 8) | nums[3]
+//        } else {
+//            throw ParsingError()
+//        }
+//    }
 }

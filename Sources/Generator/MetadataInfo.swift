@@ -36,7 +36,7 @@ struct MetadataInfo {
 	}
 
 	init(parsing input: inout ParserSpan) throws {
-		let streams = try Self.parseStart(&input)
+		let streams = try Self.getStreams(&input)
 
 		guard let metadataStream = streams["#~"] else {
 			throw ParsingError()
@@ -90,73 +90,34 @@ struct MetadataInfo {
 		self.strides = strides
 		self.tables = tables
 
-		// bruh
-		self.strings = nil
-		self.blob = nil
-		self.guid = nil
-		self.userStrings = nil
-
-		// for stream in streams {
-		// 	try input.seek(toAbsoluteOffset: stream.offset)
-
-		// 	switch stream.name {
-		// 		case "#~":
-		// 			// skip Reserved, MajorVersion, MinorVersion
-		// 			try input.seek(toRelativeOffset: 4+1+1)
-		// 			let heapSizes = HeapSizes(rawValue: try UInt8(parsingLittleEndian: &input, byteCount: 1))
-		// 			self.heapSizes = heapSizes
-
-		// 			try input.seek(toRelativeOffset: 1) // skip Reserved
-		// 			let valid = try UInt64(parsingLittleEndian: &input)
-		// 			sorted = try UInt64(parsingLittleEndian: &input)
-
-		// 			// Filter valid tables and parse Rows
-		// 			for i in rowCounts.indices {
-		// 				guard valid & (1 << i) != 0 else {
-		// 					continue
-		// 				}
-
-		// 				rowCounts[i] = try UInt32(parsingLittleEndian: &input)
-		// 			}
-
-		// 			let indexSizes = IndexSizes(rowCounts)
-		// 			let codedIndexSizes = CodedIndexSizes(rowCounts)
-		// 			self.indexSizes = indexSizes
-		// 			self.codedIndexSizes = codedIndexSizes
-
-		// 			// Get table ranges
-		// 			for i in rowCounts.indices {
-		// 				let rowCount = rowCounts[i]
-		// 				guard rowCount > 0 else { continue }
-
-		// 				guard let kind = TableKind(rawValue: i) else {
-		// 					throw ParsingError()
-		// 				}
-
-		// 				let stride = kind.stride(heapSizes, indexSizes, codedIndexSizes)
-		// 				strides[i] = stride
-
-		// 				tables[i] = try input.sliceRange(
-		// 					objectStride: stride,
-		// 					objectCount: rowCount
-		// 				)
-		// 			}
-
-		// 		case "#Strings":
-		// 			strings = try input.sliceRange(byteCount: stream.size)
-
-		// 		case "#US": // User Strings
-		// 			userStrings = try input.sliceRange(byteCount: stream.size)
-
-		// 		case "#GUID":
-		// 			guid = try input.sliceRange(byteCount: stream.size)
-
-		// 		case "#Blob":
-		// 			blob = try input.sliceRange(byteCount: stream.size)
-		// 		default:
-		// 			throw ParsingError()
-		// 	}
-		// }
+        // Heaps
+        if let stringStream = streams["#Strings"] {
+            try input.seek(toAbsoluteOffset: stringStream.offset)
+            self.strings = try input.sliceRange(byteCount: stringStream.size)
+        } else {
+            self.strings = nil
+        }
+        
+        if let blobStream = streams["#Blob"] {
+            try input.seek(toAbsoluteOffset: blobStream.offset)
+            self.blob = try input.sliceRange(byteCount: blobStream.size)
+        } else {
+            self.blob = nil
+        }
+        
+        if let guidStream = streams["#GUID"] {
+            try input.seek(toAbsoluteOffset: guidStream.offset)
+            self.guid = try input.sliceRange(byteCount: guidStream.size)
+        } else {
+            self.guid = nil
+        }
+		
+        if let userStringsStream = streams["#US"] {
+            try input.seek(toAbsoluteOffset: userStringsStream.offset)
+            self.userStrings = try input.sliceRange(byteCount: userStringsStream.size)
+        } else {
+            self.userStrings = nil
+        }
 	}
 
 	/// WinMD files are .NET assemblies, which are stored in a subset of the Microsoft Portable Executable format
@@ -166,7 +127,7 @@ struct MetadataInfo {
 	/// - II.25 File format extensions to PE
 	///
 	/// Also useful: https://learn.microsoft.com/en-us/windows/win32/debug/pe-format
-	private static func parseStart(_ input: inout ParserSpan) throws -> [String: StreamInfo] {
+	private static func getStreams(_ input: inout ParserSpan) throws -> [String: StreamInfo] {
 		try #magicNumber("MZ", parsing: &input) // MS-DOS header
 
 		try input.seek(toAbsoluteOffset: 0x3c)
