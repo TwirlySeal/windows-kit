@@ -7,7 +7,7 @@ let package = Package(
     name: "windows-kit",
 
     platforms: [
-        .macOS(.v10_15)
+        .macOS(.v26)
     ],
 
     dependencies: [
