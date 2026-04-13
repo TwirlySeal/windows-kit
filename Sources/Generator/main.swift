@@ -1,6 +1,7 @@
-// import SystemPackage
 import Foundation
+#if canImport(FoundationNetworking)
 import FoundationNetworking
+#endif
 import Zip
 
 func download(url: URL) async throws -> Data {
