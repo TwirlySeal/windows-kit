@@ -34,8 +34,7 @@ enum ZipError: Error {
 }
 
 public func parseZip(bytes: borrowing Span<UInt8>) throws {
-	let eocdOffset = findEOCD(span: bytes)
-	guard let eocdOffset else {
+	guard let eocdOffset = findEOCD(span: bytes) else {
 		throw ZipError.noCentralDirectory
 	}
 	var span = ParserSpan(bytes.bytes)
@@ -54,10 +53,9 @@ public func parseZip(bytes: borrowing Span<UInt8>) throws {
 	try span.seek(toAbsoluteOffset: centralDirectoryOffset)
 	var centralDirectorySpan = try span.sliceSpan(byteCount: centralDirectorySize)
 
-	for _ in 0..<numberOfEntries {
-		let entry = try ZipEntry(parsing: &centralDirectorySpan)
-		print(entry.fileName)
-	}
+    let zipEntries = try Array(count: Int(numberOfEntries)) {
+        try ZipEntry(parsing: &centralDirectorySpan)
+    }
 }
 
 enum CompressionMethod: UInt16 {
@@ -77,6 +75,7 @@ struct ZipEntry {
 	let compressedSize: UInt32
 	let uncompressedSize: UInt32
 	let fileName: String
+    let localHeaderOffset: UInt32
 
 	init(parsing span: inout ParserSpan) throws {
 		guard try UInt32(parsingLittleEndian: &span) == 0x02014b50 else {
@@ -112,7 +111,7 @@ struct ZipEntry {
 		// skip disk number start, internal and external file attributes
 		try span.seek(toRelativeOffset: 2 + 2 + 4)
 
-		let localHeaderOffset = try UInt32(parsingLittleEndian: &span)
+        self.localHeaderOffset = try UInt32(parsingLittleEndian: &span)
 
 		// ZIP 2.0 only supports IBM Code Page 437 but:
 		// - This is a superset of ASCII

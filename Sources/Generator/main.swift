@@ -71,10 +71,19 @@ let cacheURL = URL(fileURLWithPath: FileManager.default.currentDirectoryPath).ap
 try FileManager.default.createDirectory(at: cacheURL, withIntermediateDirectories: true)
 
 do {
+    // Test zip parser
 	try parseZip(bytes: contents.span)
+    
+    // Test deflate parser
+    let deflateBlock: [UInt8] = [0b0000_0010]
+    var bitSpan = try BitSpan(span: deflateBlock.span)
+    try parseDeflate(span: &bitSpan)
 } catch {
 	print(error)
 }
+
+
+
 // try contents.withParserSpan { try parseZip(span: &$0) }
 // try contents.write(to: cacheURL.appendingPathComponent("contracts.zip"))
 
