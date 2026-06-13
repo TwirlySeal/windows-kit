@@ -48,11 +48,15 @@ public struct BitSpan: ~Copyable, ~Escapable {
         let bitsLeftInCurrentByte = 8 - bitOffset
         
         // Fast path: All bits requested are within the current byte
-        if bitsLeftInCurrentByte > bitCount {
+        if bitsLeftInCurrentByte >= bitCount {
             let mask: UInt8 = (1 << bitCount) &- 1
             let result = (span[byteOffset] >> bitOffset) & mask
             
             bitOffset += bitCount
+            if bitOffset == 8 {
+                bitOffset = 0
+                byteOffset += 1
+            }
             return T(truncatingIfNeeded: result)
         }
         
