@@ -1,5 +1,3 @@
-import BinaryParsing
-
 enum BitError: Error {
     case insufficientData
 }

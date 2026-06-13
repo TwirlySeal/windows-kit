@@ -33,11 +33,11 @@ enum ZipError: Error {
 	case encrypted
 }
 
-public func parseZip(bytes: borrowing Span<UInt8>) throws {
-	guard let eocdOffset = findEOCD(span: bytes) else {
+public func parseZip(byteSpan: borrowing Span<UInt8>) throws {
+	guard let eocdOffset = findEOCD(span: byteSpan) else {
 		throw ZipError.noCentralDirectory
 	}
-	var span = ParserSpan(bytes.bytes)
+	var span = ParserSpan(byteSpan.bytes)
 	try span.seek(toAbsoluteOffset: eocdOffset)
 
 	// Skip:
