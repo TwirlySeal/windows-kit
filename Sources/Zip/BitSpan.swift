@@ -31,7 +31,19 @@ public struct BitSpan: ~Copyable, ~Escapable {
         }
     }
     
-    mutating func read<T: FixedWidthInteger>(bitCount: Int) throws -> T {
+    fileprivate mutating func peek<T: FixedWidthInteger>(bitCount: Int) throws -> T {
+        let startByteOffset = self.byteOffset
+        let startBitOffset = self.bitOffset
+        
+        defer {
+            self.byteOffset = startByteOffset
+            self.bitOffset = startBitOffset
+        }
+        
+        return try self.read(bitCount: bitCount)
+    }
+    
+    fileprivate mutating func read<T: FixedWidthInteger>(bitCount: Int) throws -> T {
         // `(1 << count) - 1` gives a bitmask for the bottom `count` bits
         // Example:
         // - If `count` is 3, `1 << 3` equals `0b00001000`.
@@ -100,5 +112,9 @@ extension FixedWidthInteger where Self : BitwiseCopyable {
     /// Create an integer by parsing a value of this type's size
     init(span: inout BitSpan, bitCount: Int = Self.bitWidth) throws {
         self = try span.read(bitCount: bitCount)
+    }
+    
+    init(peeking span: inout BitSpan, bitCount: Int = Self.bitWidth) throws {
+        self = try span.peek(bitCount: bitCount)
     }
 }
