@@ -1,61 +1,124 @@
+enum HuffmanError: Error {
+    case incompleteTree
+}
+
 struct CanonicalHuffmanDecoder {
     private static let chunkBits = 9
-    private static let numChunks = 1 << chunkBits
+    private static let numChunks = 1 << chunkBits // 512
     
-    // Because we read in fixed size chunks, `bitLength` says how long the
-    // code is and the remaining bits are ignored
     private enum TableEntry {
+        // Empty placeholders are used to initialise tables so we can
+        // assign directly to specific indices.
         case empty
         // Deflate symbol alphabets have a maximum of 286
         // Max bit length is 15
         case symbol(value: UInt16, bitLength: UInt8)
-        case secondaryTable(offset: UInt16, bitCount: UInt8)
+        case secondaryTable(offset: UInt16)
     }
     
-    // In Huffman coding, more common symbols get shorter codes and conversely
-    // less common symbols get longer codes. This gives better compression ratios.
-    // In this decoder, more common symbols go in a fast primary table
-    // and less common symbols go in a slower secondary table.
-    
-    private let primaryTable: [TableEntry]
-    private let secondaryTable: [TableEntry]
+    // Direct lookups for codes <= 9 bits
+    private let primaryTable: [512 of TableEntry]
+    // Overflow lookup for codes > 9 bits
+    private let secondaryTable: [[TableEntry]]
 
-    public init(lengths: [Int], maxLength: Int) {
-        // Step 1: Count the number of codes for each code length
+    public init(lengths: [Int]) throws {
+        // 1. Count the number of codes for each code length
         // In a binary tree, the number of bits in a code is its depth.
         // We are counting how many leaves (symbols) terminate at each level.
         
-        // Sized to `maxLength + 1` so we can use the lengths as indices
-        var lengthFrequency = Array(repeating: 0, count: maxLength + 1)
+        // Max code length is 16
+        var lengthFrequency = [16 of Int](repeating: 0)
+        var minLength = 0, maxLength = 0
+        
         for length in lengths {
             // A length of 0 means the symbol is not used,
             // so we ignore it
-            if length > 0 {
-                lengthFrequency[length] += 1
+            if length == 0 {
+                continue
             }
+            if minLength == 0 || length < minLength {
+                minLength = length
+            }
+            if length > maxLength {
+                maxLength = length
+            }
+            lengthFrequency[length] += 1
         }
         
-        // Step 2: Find the numerical value of the smallest code for each
+        if maxLength == 0 {
+            self.primaryTable = .init(repeating: .empty)
+            self.secondaryTable = []
+            return // Empty tree
+        }
+        
+        // 2. Find the numerical value of the smallest code for each
         // code length
-        // Goal: Find the leftmost binary pattern for each level of the tree.
-        // We traverse the tree level by level (depth 1 to `maxLength`).
+        // This gives the leftmost binary pattern for each level of the tree.
         
-        /// The starting value for the previous level
+        // The starting value for the previous level
         var code = 0
-        var startingCodes = Array(repeating: 0, count: maxLength + 1)
-        for bits in 1...maxLength {
-            code = (code + lengthFrequency[bits - 1]) << 1
+        var startingCodes = [16 of Int](repeating: 0)
+        
+        // By starting the loop at `minLength` rather than 1, we skip iterating over
+        // shorter bit-lengths that have a count of zero
+        for bits in minLength...maxLength {
+            code <<= 1
             startingCodes[bits] = code
+            code += lengthFrequency[bits]
         }
         
-        // Step 3: Assign codes to all symbols and build lookup tables
+        let prefixSpaceFullyConsumed = (code == (1 << maxLength))
+        // A normal binary tree requires at least two symbols to split a branch
+        // but Deflate allows a "degenerate" case: a tree with only one symbol.
+        // This enables compressing single character files efficiently.
+        let isValidDegenerateTree = (code == 1 && maxLength == 1)
         
-        // We initialize the primary table with empty placeholders so we can
-        // assign directly to specific indices.
-        var primaryTable = Array(repeating: TableEntry.empty, count: Self.numChunks)
-        var secondaryTable = [TableEntry]()
+        if !prefixSpaceFullyConsumed && !isValidDegenerateTree {
+            throw HuffmanError.incompleteTree
+        }
         
-        for (symbolIndex, length) in lengths.enumerated() where length != 0 {
+        var primaryTable = [512 of TableEntry](repeating: .empty)
+        var secondaryTable: [[TableEntry]]
+        
+        // 3. Pre-allocate secondary tables if any codes exceed 9 bits
+        if maxLength > Self.chunkBits {
+            let numLinks = 1 << (maxLength - Self.chunkBits)
+            
+            // How many Level 1 entries are dedicated to short codes
+            let overflowStartIndex = startingCodes[Self.chunkBits+1] >> 1
+            
+            secondaryTable = [[TableEntry]](
+                repeating: [],
+                count: Self.numChunks - overflowStartIndex
+            )
+            
+            for chunkIndex in overflowStartIndex..<Self.numChunks {
+                // Deflate reads bits least-significant bit (LSB) first.
+                // Canonical Huffman assigns codes MSB first.
+                // We reverse the bits so the lookup table matches the incoming stream's bit-order.
+                let reversedBits = Self.reverseBits(chunkIndex)
+                let reverseIndex = reversedBits >> (16 - Self.chunkBits)
+                
+                let overflowOffset = chunkIndex - overflowStartIndex
+                
+                primaryTable[reverseIndex] = .secondaryTable(
+                    offset: UInt16(overflowOffset)
+                )
+                
+                secondaryTable[overflowOffset] = [TableEntry](
+                    repeating: .empty,
+                    count: numLinks
+                )
+            }
+        } else {
+            secondaryTable = []
+        }
+        
+        // 4. Assign codes to all symbols and build lookup tables
+        for (symbolIndex, length) in lengths.enumerated() {
+            if length == 0 {
+                continue
+            }
             // Assign the next available code for this length to the symbol
             let canonicalCode = startingCodes[length]
             
@@ -71,7 +134,6 @@ struct CanonicalHuffmanDecoder {
                 
                 // Fill all 9-bit slots that start with this bit pattern
                 let step = 1 << length
-                
                 for index in stride(from: reversedCode, to: Self.numChunks, by: step) {
                     primaryTable[index] = .symbol(value: UInt16(symbolIndex), bitLength: UInt8(length))
                 }
@@ -85,27 +147,23 @@ struct CanonicalHuffmanDecoder {
                 let suffix = reversedCode >> Self.chunkBits
                 let suffixLength = length - Self.chunkBits
                 
-                let offset: Int
                 let excessBits = maxLength - Self.chunkBits
                 let tableSize = 1 << excessBits
                 
-                // Check if we've already created a secondary table for this 9-bit prefix.
-                // No Huffman code is a prefix of another. But because we are slicing the
-                // bitstream at a fixed 9-bit point, many of the longer, deeper codes
-                // will share the same 9-bit root before branching off in later bits
-                if case .secondaryTable(let existingOffset, _) = primaryTable[prefix] {
-                    offset = Int(existingOffset)
-                } else {
-                    // Allocate a new secondary table block
-                    offset = secondaryTable.count
-                    secondaryTable.append(contentsOf: Array(repeating: .empty, count: tableSize))
-                    primaryTable[prefix] = .secondaryTable(offset: UInt16(offset), bitCount: UInt8(excessBits))
+                // Extract the offset for the secondary table that was pre-allocated in Step 3
+                guard case let .secondaryTable(offset) = primaryTable[prefix] else {
+                    // This is a sanity check. If the tree is valid, the pre-allocation
+                    // step guarantees this slot already points to a secondary table.
+                    throw HuffmanError.incompleteTree
                 }
                 
-                // Fill all slots in the overflow chunk that match the remaining bit pattern
+                // Fill all slots in the secondary table that start with this suffix
                 let step = 1 << suffixLength
-                for index in stride(from: offset + suffix, to: offset + tableSize, by: step) {
-                    secondaryTable[index] = .symbol(value: UInt16(symbolIndex), bitLength: UInt8(length))
+                for index in stride(from: suffix, to: tableSize, by: step) {
+                    secondaryTable[Int(offset)][index] = .symbol(
+                        value: UInt16(symbolIndex),
+                        bitLength: UInt8(length)
+                    )
                 }
             }
         }
