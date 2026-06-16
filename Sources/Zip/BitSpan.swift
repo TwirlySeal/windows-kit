@@ -31,6 +31,21 @@ public struct BitSpan: ~Copyable, ~Escapable {
         }
     }
     
+    mutating func seek(toRelativeBitOffset relativeBitOffset: Int) throws {
+        let absoluteBitPosition = (self.byteOffset * 8) + self.bitOffset
+        
+        let targetAbsoluteBitPosition = absoluteBitPosition + relativeBitOffset
+        
+        // Ensure the target is within the valid bounds of the span
+        let totalBits = self.span.count * 8
+        guard targetAbsoluteBitPosition >= 0, targetAbsoluteBitPosition <= totalBits else {
+            throw BitError.insufficientData
+        }
+        
+        self.byteOffset = targetAbsoluteBitPosition / 8
+        self.bitOffset = targetAbsoluteBitPosition % 8
+    }
+    
     fileprivate mutating func peek<T: FixedWidthInteger>(bitCount: Int) throws -> T {
         let startByteOffset = self.byteOffset
         let startBitOffset = self.bitOffset
@@ -110,11 +125,15 @@ public struct BitSpan: ~Copyable, ~Escapable {
 
 extension FixedWidthInteger where Self : BitwiseCopyable {
     /// Create an integer by parsing a value of this type's size
-    init(span: inout BitSpan, bitCount: Int = Self.bitWidth) throws {
+    init(reading span: inout BitSpan, bitCount: Int = Self.bitWidth) throws {
         self = try span.read(bitCount: bitCount)
     }
     
     init(peeking span: inout BitSpan, bitCount: Int = Self.bitWidth) throws {
         self = try span.peek(bitCount: bitCount)
+    }
+    
+    init(peekingAtMost span: inout BitSpan, bitCount: Int = Self.bitWidth) throws {
+        self = try span.peek(bitCount: Swift.min(bitCount, span.bitsLeft))
     }
 }

@@ -20,31 +20,31 @@ extension Array {
 
 public func parseDeflate(span: inout BitSpan) throws {
     // BFINAL
-    let isFinalBlock = try UInt8(span: &span, bitCount: 1) == 1
+    let isFinalBlock = try UInt8(reading: &span, bitCount: 1) == 1
     // BTYPE
-    guard let blockType = BlockType(rawValue: try UInt8(span: &span, bitCount: 2)) else {
+    guard let blockType = BlockType(rawValue: try UInt8(reading: &span, bitCount: 2)) else {
         throw DeflateError.invalidBlockType
     }
     span.align()
     
     switch blockType {
     case .noCompression:
-        let length = try UInt16(span: &span) // LEN
-        let nlength = try UInt16(span: &span) // NLEN, the one's complement of LEN
+        let length = try UInt16(reading: &span) // LEN
+        let nlength = try UInt16(reading: &span) // NLEN, the one's complement of LEN
     
     case .fixedHuffman:
         print("Fixed huffman")
         
     case .dynamicHuffman:
         // HLIT
-        let nLiteralLengthCodes = try Int(span: &span, bitCount: 5) + HLITBase
+        let numLiteralLengthCodes = try Int(reading: &span, bitCount: 5) + HLITBase
         // HDIST
-        let nDistanceCodes = try Int(span: &span, bitCount: 5) + HDISTBase
+        let numDistanceCodes = try Int(reading: &span, bitCount: 5) + HDISTBase
         // HCLEN
-        let nCodeLengthCodes = try Int(span: &span, bitCount: 4) + HCLENBase
+        let numCodeLengthCodes = try Int(reading: &span, bitCount: 4) + HCLENBase
         
-        let codeLengths = try Array(count: nCodeLengthCodes) {
-            try Int(span: &span, bitCount: 3)
+        let codeLengths = try Array(count: numCodeLengthCodes) {
+            try Int(reading: &span, bitCount: 3)
         }
     }
 }

@@ -11,9 +11,9 @@ struct CanonicalHuffmanDecoder {
         // assign directly to specific indices.
         case empty
         // Deflate symbol alphabets have a maximum of 286
-        // Max bit length is 15
+        // Max code length is 15
         case symbol(value: UInt16, bitLength: UInt8)
-        case secondaryTable(offset: UInt16)
+        case secondaryTable(offset: UInt16, maxSuffixBits: UInt8)
     }
     
     // Direct lookups for codes <= 9 bits
@@ -21,12 +21,12 @@ struct CanonicalHuffmanDecoder {
     // Overflow lookup for codes > 9 bits
     private let secondaryTable: [[TableEntry]]
 
-    public init(lengths: [Int]) throws {
+    public init?(lengths: [Int]) throws {
         // 1. Count the number of codes for each code length
         // In a binary tree, the number of bits in a code is its depth.
         // We are counting how many leaves (symbols) terminate at each level.
         
-        // Max code length is 16
+        // Maximum code length + 1 so lengths can be used as indices
         var lengthFrequency = [16 of Int](repeating: 0)
         var minLength = 0, maxLength = 0
         
@@ -46,9 +46,8 @@ struct CanonicalHuffmanDecoder {
         }
         
         if maxLength == 0 {
-            self.primaryTable = .init(repeating: .empty)
-            self.secondaryTable = []
-            return // Empty tree
+            // Empty tree
+            return nil
         }
         
         // 2. Find the numerical value of the smallest code for each
@@ -102,7 +101,8 @@ struct CanonicalHuffmanDecoder {
                 let overflowOffset = chunkIndex - overflowStartIndex
                 
                 primaryTable[reverseIndex] = .secondaryTable(
-                    offset: UInt16(overflowOffset)
+                    offset: UInt16(overflowOffset),
+                    maxSuffixBits: 0
                 )
                 
                 secondaryTable[overflowOffset] = [TableEntry](
@@ -151,10 +151,17 @@ struct CanonicalHuffmanDecoder {
                 let tableSize = 1 << excessBits
                 
                 // Extract the offset for the secondary table that was pre-allocated in Step 3
-                guard case let .secondaryTable(offset) = primaryTable[prefix] else {
+                guard case let .secondaryTable(offset, currentSuffixBits) = primaryTable[prefix] else {
                     // This is a sanity check. If the tree is valid, the pre-allocation
                     // step guarantees this slot already points to a secondary table.
                     throw HuffmanError.incompleteTree
+                }
+                
+                if suffixLength > currentSuffixBits {
+                    primaryTable[prefix] = .secondaryTable(
+                        offset: offset,
+                        maxSuffixBits: UInt8(suffixLength)
+                    )
                 }
                 
                 // Fill all slots in the secondary table that start with this suffix
@@ -180,5 +187,35 @@ struct CanonicalHuffmanDecoder {
             v >>= 1
         }
         return result
+    }
+    
+    func decode(span: inout BitSpan) throws -> Int {
+        let chunk = try Int(peekingAtMost: &span, bitCount: Self.chunkBits)
+        
+        switch self.primaryTable[chunk] {
+        case .symbol(let value, let bitLength):
+            // Short code
+            try span.seek(toRelativeBitOffset: Int(bitLength))
+            return Int(value)
+            
+        case .secondaryTable(let offset, let maxSuffixBits):
+            // Long code
+            try span.seek(toRelativeBitOffset: Self.chunkBits)
+            
+            let suffix = try Int(peekingAtMost: &span, bitCount: Int(maxSuffixBits))
+            
+            switch self.secondaryTable[Int(offset)][suffix] {
+            case .symbol(let value, let bitLength):
+                let remainingBits = Int(bitLength) - Self.chunkBits
+                try span.seek(toRelativeBitOffset: remainingBits)
+                return Int(value)
+
+            default:
+                throw HuffmanError.incompleteTree
+            }
+            
+        case .empty:
+            throw HuffmanError.incompleteTree
+        }
     }
 }
