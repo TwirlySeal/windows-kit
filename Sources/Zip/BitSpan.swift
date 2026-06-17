@@ -18,6 +18,13 @@ public struct BitSpan: ~Copyable, ~Escapable {
         self.span = span
     }
     
+    var bytes: Span<UInt8> {
+        @_lifetime(copy self)
+        borrowing get {
+            span.extracting(droppingFirst: byteOffset)
+        }
+    }
+    
     var bitsLeft: Int {
         let bytesLeft = span.count - byteOffset
         return (bytesLeft * 8) - bitOffset
@@ -29,6 +36,17 @@ public struct BitSpan: ~Copyable, ~Escapable {
             bitOffset = 0
             byteOffset += 1
         }
+    }
+    
+    /// Does not align to byte boundary
+    mutating func seek(toRelativeByteOffset relativeByteOffset: Int) throws {
+        let targetByteOffset = self.byteOffset + relativeByteOffset
+        
+        guard targetByteOffset >= 0, targetByteOffset <= self.span.count else {
+            throw BitError.insufficientData
+        }
+        
+        self.byteOffset = targetByteOffset
     }
     
     mutating func seek(toRelativeBitOffset relativeBitOffset: Int) throws {

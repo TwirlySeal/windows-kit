@@ -10,12 +10,6 @@ let HDISTBase = 1
 let HCLENBase = 4
 let codeLengthAlphabetSize = 19
 
-/// RLE symbol values for code length encoding (RFC 1951 §3.2.7).
-let RLELiteralMax: UInt16 = 15
-let RLECopyPrevious: UInt16 = 16
-let RLEZeroShort: UInt16 = 17
-let RLEZeroLong: UInt16 = 18
-
 /// Code length order for dynamic Huffman tables (RFC 1951 §3.2.7).
 ///
 /// Lengths are stored in this scrambled order to maximize runs of zeros at the end,
@@ -31,7 +25,7 @@ typealias TableTuple = (base: UInt16, extra: UInt8)
 /// Length code table (RFC 1951 §3.2.5).
 ///
 /// Maps length codes (257-285) to base length values and extra bits.
-fileprivate let lengthCodeTable: InlineArray<_, TableTuple> = [
+let lengthCodeTable: InlineArray<_, TableTuple> = [
     (3, 0), (4, 0), (5, 0), (6, 0), (7, 0), (8, 0), (9, 0), (10, 0),  // 257-264
     (11, 1), (13, 1), (15, 1), (17, 1),  // 265-268
     (19, 2), (23, 2), (27, 2), (31, 2),  // 269-272
@@ -39,10 +33,6 @@ fileprivate let lengthCodeTable: InlineArray<_, TableTuple> = [
     (67, 4), (83, 4), (99, 4), (115, 4),  // 277-280
     (131, 5), (163, 5), (195, 5), (227, 5), (258, 0),  // 281-285
 ]
-
-func lengthCode(_ value: Int) -> TableTuple {
-    lengthCodeTable[value - 257]
-}
 
 /// Distance code table (RFC 1951 §3.2.5).
 ///

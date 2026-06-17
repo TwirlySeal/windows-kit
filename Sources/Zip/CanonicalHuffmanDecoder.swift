@@ -95,8 +95,8 @@ struct CanonicalHuffmanDecoder {
                 // Deflate reads bits least-significant bit (LSB) first.
                 // Canonical Huffman assigns codes MSB first.
                 // We reverse the bits so the lookup table matches the incoming stream's bit-order.
-                let reversedBits = Self.reverseBits(chunkIndex)
-                let reverseIndex = reversedBits >> (16 - Self.chunkBits)
+                let reverseIndex = Self.reverseBits(chunkIndex, bitCount: Self.chunkBits)
+//                let reverseIndex = reversedBits >> (16 - Self.chunkBits)
                 
                 let overflowOffset = chunkIndex - overflowStartIndex
                 
@@ -127,7 +127,7 @@ struct CanonicalHuffmanDecoder {
             startingCodes[length] += 1
             
             // Reverse bits to match LSB-first bitstream reading
-            let reversedCode = Self.reverseBits(canonicalCode)
+            let reversedCode = Self.reverseBits(canonicalCode, bitCount: length)
             
             if length <= Self.chunkBits {
                 // Short code: Fits entirely in the primary table
@@ -179,10 +179,10 @@ struct CanonicalHuffmanDecoder {
         self.secondaryTable = secondaryTable
     }
     
-    private static func reverseBits(_ value: Int) -> Int {
+    private static func reverseBits(_ value: Int, bitCount: Int) -> Int {
         var result = 0
         var v = value
-        for _ in 0..<Int.bitWidth {
+        for _ in 0..<bitCount {
             result = (result << 1) | (v & 1)
             v >>= 1
         }
@@ -217,5 +217,28 @@ struct CanonicalHuffmanDecoder {
         case .empty:
             throw HuffmanError.incompleteTree
         }
+    }
+    
+    static func fixedLiteralDecoder() -> Self {
+        var lengths = [Int](repeating: 0, count: 288)
+        
+        for i in 0...143 {
+            lengths[i] = 8
+        }
+        for i in 144...255 {
+            lengths[i] = 9
+        }
+        for i in 256...279 {
+            lengths[i] = 7
+        }
+        for i in 280...287 {
+            lengths[i] = 8
+        }
+        return try! self.init(lengths: lengths)!
+    }
+    
+    static func fixedDistanceDecoder() -> Self {
+        let lengths = [Int](repeating: 5, count: 32)
+        return try! self.init(lengths: lengths)!
     }
 }

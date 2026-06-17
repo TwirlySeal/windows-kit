@@ -1,4 +1,5 @@
 import BinaryParsing
+import Foundation
 
 /// Search for End of Central Directory Signature (0x06054b50) from end
 func findEOCD(span: borrowing Span<UInt8>) -> Int? {
@@ -31,9 +32,10 @@ enum ZipError: Error {
 	case unsupportedMinVersion
 	case unsupportedCompressionMethod
 	case encrypted
+    case invalidLocalHeaderSignature
 }
 
-public func parseZip(byteSpan: borrowing Span<UInt8>) throws {
+public func parseZip(byteSpan: borrowing Span<UInt8>) throws -> [CentralDirectoryEntry] {
 	guard let eocdOffset = findEOCD(span: byteSpan) else {
 		throw ZipError.noCentralDirectory
 	}
@@ -54,11 +56,12 @@ public func parseZip(byteSpan: borrowing Span<UInt8>) throws {
 	var centralDirectorySpan = try span.sliceSpan(byteCount: centralDirectorySize)
 
     let zipEntries = try Array(count: Int(numberOfEntries)) {
-        try ZipEntry(parsing: &centralDirectorySpan)
+        try CentralDirectoryEntry(parsing: &centralDirectorySpan)
     }
+    return zipEntries
 }
 
-enum CompressionMethod: UInt16 {
+public enum CompressionMethod: UInt16 {
 	case stored = 0
 	case deflate = 8
 }
@@ -69,12 +72,12 @@ struct GeneralFlags: OptionSet {
 	static let encrypted = Self(rawValue: 1)
 }
 
-struct ZipEntry {
-	let compressionMethod: CompressionMethod
+public struct CentralDirectoryEntry {
+	public let compressionMethod: CompressionMethod
 	let crc32Checksum: UInt32
 	let compressedSize: UInt32
 	let uncompressedSize: UInt32
-	let fileName: String
+	public let fileName: String
     let localHeaderOffset: UInt32
 
 	init(parsing span: inout ParserSpan) throws {
@@ -120,4 +123,38 @@ struct ZipEntry {
 		self.fileName = try String(parsingUTF8: &span, count: Int(fileNameLength))
 		try span.seek(toRelativeOffset: extraFieldLength + fileCommentLength) // skip
 	}
+}
+
+public struct ZipEntry: ~Copyable, ~Escapable {
+    private let span: Span<UInt8>
+    private let centralDirectoryEntry: CentralDirectoryEntry
+    
+    public var fileName: String {
+        centralDirectoryEntry.fileName
+    }
+    
+    @_lifetime(copy span)
+    public init(span: Span<UInt8>, centralDirectoryEntry: CentralDirectoryEntry) throws {
+        self.centralDirectoryEntry = centralDirectoryEntry
+        
+        var parser = ParserSpan(span.bytes)
+        try parser.seek(toAbsoluteOffset: centralDirectoryEntry.localHeaderOffset)
+        guard try UInt32(parsingLittleEndian: &parser) == 0x04034b50 else {
+            throw ZipError.invalidLocalHeaderSignature
+        }
+        // Skip other fields
+        try parser.seek(toRelativeOffset: 22)
+        
+        let fileNameLength = try UInt16(parsingLittleEndian: &parser)
+        let extraFieldLength = try UInt16(parsingLittleEndian: &parser)
+        
+        try parser.seek(toRelativeOffset: fileNameLength + extraFieldLength)
+        let start = parser.startPosition
+        let end = start + Int(centralDirectoryEntry.compressedSize)
+        self.span = span.extracting(start..<end)
+    }
+    
+    public func extract() throws -> Data {
+        return try parseDeflate(span: self.span, uncompressedSize: Int(centralDirectoryEntry.uncompressedSize))
+    }
 }

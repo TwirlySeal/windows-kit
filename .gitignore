@@ -7,6 +7,9 @@ DerivedData/
 .swiftpm/xcode/package.xcworkspace/contents.xcworkspacedata
 .netrc
 
+# Temp
+.swiftpm/
+
 # Windows Kit
 .winmd-cache/
 contracts.zip
