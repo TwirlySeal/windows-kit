@@ -8,53 +8,63 @@ import BinaryParsing
 /// that parse the linked table row when it is accessed.
 ///
 /// View structs go in the Tables folder
-class MetadataDB {
-	private let data: Data
-	let ranges: MetadataInfo
-
-	init(data: Data) throws {
-		self.data = data
-		self.ranges = try data.withParserSpan { try MetadataInfo(parsing: &$0) }
-	}
-
-	/// Parse one row of a table
-	func withRowSpan<T>(in table: TableKind, rowIndex: Int, _ body: (inout ParserSpan) throws -> T) throws -> T {
-		try data.withParserSpan { span in
-			guard let range = ranges.tables[table.rawValue] else {
-				throw ParsingError()
-			}
-			try span.seek(toRange: range)
-			try span.seek(toRelativeOffset: ranges.strides[table.rawValue] * rowIndex)
-			return try body(&span)
-		}
-	}
-
-	/// Read from the string heap
-	func string(at offset: Int) throws -> String {
-		try data.withParserSpan { span in
-			guard let range = ranges.strings else {
-				throw ParsingError()
-			}
-			try span.seek(toRange: range)
-			return try String(parsingNulTerminated: &span)
-		}
-	}
+final class MetadataDB {
+    private let data: Data
+    let ranges: MetadataInfo
     
-//    static func decompressInteger(input: inout ParserSpan) throws -> UInt8 {
-//        let oneByteMask: UInt = 0b1000_0000
-//        let twoByteMask: UInt = 0b1100_0000
-//        let fourByteMask: UInt = 0b1110_0000
-//
-//        let firstByte = try UInt8(parsingLittleEndian: &input, byteCount: 1)
-//
-//        return if firstByte & oneByteMask == 0 {
-//            firstByte
-//        } else if firstByte & twoByteMask == 0b1000_0000 {
-//            ((nums[0] & 0b0011_1111) << 8) | nums[1]
-//        } else if firstByte & fourByteMask == 0b1100_0000 {
-//            ((nums[0] & 0b0001_1111) << 24) | (nums[1] << 16) | (nums[2] << 8) | nums[3]
-//        } else {
-//            throw ParsingError()
-//        }
-//    }
+    init(data: Data) throws {
+        self.data = data
+        self.ranges = try data.withParserSpan { try MetadataInfo(parsing: &$0) }
+    }
+    
+    /// Parse one row of a table
+    func withRowSpan<T>(in table: TableKind, rowIndex: Int, _ body: (inout ParserSpan) throws -> T) throws -> T {
+        try data.withParserSpan { span in
+            guard let range = ranges.tables[table.rawValue] else {
+                throw ParsingError()
+            }
+            try span.seek(toRange: range)
+            try span.seek(toRelativeOffset: ranges.strides[table.rawValue] * rowIndex)
+            return try body(&span)
+        }
+    }
+    
+    /// Read from the string heap
+    func string(at offset: Int) throws -> String {
+        try data.withParserSpan { span in
+            guard let range = ranges.strings else {
+                throw ParsingError()
+            }
+            try span.seek(toRange: range)
+            return try String(parsingNulTerminated: &span)
+        }
+    }
+    
+    static func parseCompressedUnsignedInteger(span: inout ParserSpan) throws -> UInt32 {
+        let b1 = try UInt32(parsingLittleEndian: &span, byteCount: 1)
+        
+        if b1 >> 7 == 0b0 {
+            // Bit 7 clear, value held in bits 6 through 0
+            return b1
+            
+        } else if b1 >> 6 == 0b10 {
+            // Bit 7 set, bit 6 clear, value held in bits 5 through 0 and the next byte
+            let b2 = try UInt32(parsingLittleEndian: &span, byteCount: 1)
+            return ((b1 & 0b0011_1111) << 8) | b2
+            
+        } else if b1 >> 5 == 0b110 {
+            // Bit 7 and 6 set, bit 5 clear, value held in bits 4 through 0 and the next 3 bytes
+            let b2 = try UInt32(parsingLittleEndian: &span, byteCount: 1)
+            let b3 = try UInt32(parsingLittleEndian: &span, byteCount: 1)
+            let b4 = try UInt32(parsingLittleEndian: &span, byteCount: 1)
+            
+            return ((b1 & 0b0001_1111) << 24)
+                | (b2 << 16)
+                | (b3 << 8)
+                | b4
+            
+        } else {
+            throw ParsingError()
+        }
+    }
 }

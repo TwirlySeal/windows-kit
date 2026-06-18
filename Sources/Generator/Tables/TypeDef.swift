@@ -3,7 +3,7 @@ import BinaryParsing
 struct TypeDef {
     private let metadata: MetadataDB
     let flags: TypeAttributes
-    private let typeNameIndex: UInt32
+    let typeName: String
     
     private init(metadata: MetadataDB, span: inout ParserSpan) throws {
         self.metadata = metadata
@@ -14,7 +14,8 @@ struct TypeDef {
             throw ParsingError()
         }
         self.flags = flags
-        self.typeNameIndex = try UInt32(parsingLittleEndian: &span, byteCount: metadata.ranges.heapSizes!.stringSize)
+        let typeNameIndex = try UInt32(parsingLittleEndian: &span, byteCount: metadata.ranges.heapSizes!.stringSize)
+        self.typeName = try metadata.string(at: Int(typeNameIndex))
     }
     
     init(metadata: MetadataDB, rowIndex: Int) throws {
