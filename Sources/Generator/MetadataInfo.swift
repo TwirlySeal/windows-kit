@@ -21,12 +21,12 @@ struct MetadataInfo {
 	let rowCounts: TableSlots<UInt32>
 	let strides: TableSlots<Int>
 
-	let heapSizes: HeapSizes?
-	let indexSizes: IndexSizes?
-	let codedIndexSizes: CodedIndexSizes?
+	let heapSizes: HeapSizes
+	let indexSizes: IndexSizes
+	let codedIndexSizes: CodedIndexSizes
 	private let sorted: UInt64
 
-	let strings: ParserRange?
+	let strings: ParserRange
 	let userStrings: ParserRange?
 	let guid: ParserRange?
 	let blob: ParserRange?
@@ -45,8 +45,7 @@ struct MetadataInfo {
 
 		// skip Reserved, MajorVersion, MinorVersion
 		try input.seek(toRelativeOffset: 4+1+1)
-		let heapSizes = HeapSizes(rawValue: try UInt8(parsingLittleEndian: &input, byteCount: 1))
-		self.heapSizes = heapSizes
+        self.heapSizes = HeapSizes(rawValue: try UInt8(parsingLittleEndian: &input, byteCount: 1))
 
 		try input.seek(toRelativeOffset: 1) // skip Reserved
 		let valid = try UInt64(parsingLittleEndian: &input)
@@ -63,10 +62,8 @@ struct MetadataInfo {
 		}
 		self.rowCounts = rowCounts
 
-		let indexSizes = IndexSizes(rowCounts)
-		let codedIndexSizes = CodedIndexSizes(rowCounts)
-		self.indexSizes = indexSizes
-		self.codedIndexSizes = codedIndexSizes
+        self.indexSizes = IndexSizes(rowCounts)
+        self.codedIndexSizes = CodedIndexSizes(rowCounts)
 
 		// Get table ranges
 		var strides = TableSlots<Int>(repeating: 0)
@@ -91,12 +88,11 @@ struct MetadataInfo {
 		self.tables = tables
 
         // Heaps
-        if let stringStream = streams["#Strings"] {
-            try input.seek(toAbsoluteOffset: stringStream.offset)
-            self.strings = try input.sliceRange(byteCount: stringStream.size)
-        } else {
-            self.strings = nil
+        guard let stringStream = streams["#Strings"] else {
+            throw ParsingError()
         }
+        try input.seek(toAbsoluteOffset: stringStream.offset)
+        self.strings = try input.sliceRange(byteCount: stringStream.size)
         
         if let blobStream = streams["#Blob"] {
             try input.seek(toAbsoluteOffset: blobStream.offset)

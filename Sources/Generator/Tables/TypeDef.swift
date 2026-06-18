@@ -14,7 +14,7 @@ struct TypeDef {
             throw ParsingError()
         }
         self.flags = flags
-        let typeNameIndex = try UInt32(parsingLittleEndian: &span, byteCount: metadata.ranges.heapSizes!.stringSize)
+        let typeNameIndex = try UInt32(parsingLittleEndian: &span, byteCount: metadata.ranges.heapSizes.stringSize)
         self.typeName = try metadata.string(at: Int(typeNameIndex))
     }
     
