@@ -21,7 +21,7 @@ final class MetadataDB {
     func withRowSpan<T>(in table: TableKind, rowIndex: Int, _ body: (inout ParserSpan) throws -> T) throws -> T {
         try data.withParserSpan { span in
             guard let range = ranges.tables[table.rawValue] else {
-                throw ParsingError()
+                throw MetadataError.missingTable
             }
             try span.seek(toRange: range)
             try span.seek(toRelativeOffset: ranges.strides[table.rawValue] * rowIndex)
@@ -32,10 +32,7 @@ final class MetadataDB {
     /// Read from the string heap
     func string(at offset: Int) throws -> String {
         try data.withParserSpan { span in
-            guard let range = ranges.strings else {
-                throw ParsingError()
-            }
-            try span.seek(toRange: range)
+            try span.seek(toRange: ranges.strings)
             try span.seek(toRelativeOffset: offset)
             return try String(parsingNulTerminated: &span)
         }
@@ -65,7 +62,7 @@ final class MetadataDB {
                 | b4
             
         } else {
-            throw ParsingError()
+            throw MetadataError.invalidCompressedInteger
         }
     }
 }

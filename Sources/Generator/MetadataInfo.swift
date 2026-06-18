@@ -12,7 +12,19 @@ extension Array {
 	}
 }
 
-struct ParsingError: Error {}
+enum MetadataError: Error {
+    case missingMetadataStream
+    case unknownTable
+    case missingStringStream
+    case invalidPESignature
+    case invalidRVA
+    case invalidMetadataSignature
+    case duplicateStream(name: String)
+    case missingNullTerminator
+    case invalidStreamName
+    case missingTable
+    case invalidCompressedInteger
+}
 
 typealias TableSlots<Element> = InlineArray<64, Element>
 
@@ -39,7 +51,7 @@ struct MetadataInfo {
 		let streams = try Self.getStreams(&input)
 
 		guard let metadataStream = streams["#~"] else {
-			throw ParsingError()
+            throw MetadataError.missingMetadataStream
 		}
 		try input.seek(toAbsoluteOffset: metadataStream.offset)
 
@@ -73,7 +85,7 @@ struct MetadataInfo {
 			guard rowCount > 0 else { continue }
 
 			guard let kind = TableKind(rawValue: i) else {
-				throw ParsingError()
+                throw MetadataError.unknownTable
 			}
 
 			let stride = kind.stride(heapSizes, indexSizes, codedIndexSizes)
@@ -89,7 +101,7 @@ struct MetadataInfo {
 
         // Heaps
         guard let stringStream = streams["#Strings"] else {
-            throw ParsingError()
+            throw MetadataError.missingStringStream
         }
         try input.seek(toAbsoluteOffset: stringStream.offset)
         self.strings = try input.sliceRange(byteCount: stringStream.size)
@@ -132,7 +144,7 @@ struct MetadataInfo {
 	
 		let peSignature = try UInt32(parsingLittleEndian: &input)
 		guard peSignature == 0x00004550 else { // PE\0\0
-			throw ParsingError()
+            throw MetadataError.invalidPESignature
 		}
 
 		// PE File Header/COFF File Header
@@ -198,13 +210,13 @@ struct MetadataInfo {
 
 			// `partitioningIndex()` returns the count if the item is not found
 			guard index < sections.count else {
-				throw ParsingError()
+                throw MetadataError.invalidRVA
 			}
 
 			let section = sections[index]
 
 			guard section.virtualAddress <= rva else {
-				throw ParsingError()
+                throw MetadataError.invalidRVA
 			}
 
 			return section.pointerToRawData + (rva - section.virtualAddress)
@@ -217,7 +229,7 @@ struct MetadataInfo {
 
 		let metadataSignature = try UInt32(parsingLittleEndian: &input)
 		guard metadataSignature == 0x424A5342 else {
-			throw ParsingError()
+            throw MetadataError.invalidMetadataSignature
 		}
 		// skip MajorVersion, MinorVersion, Reserved
 		try input.seek(toRelativeOffset: 2+2+4)
@@ -233,7 +245,7 @@ struct MetadataInfo {
 			let stream = try Stream(parsing: &input, startOfMetadataRoot)
 
 			guard streams[stream.name] == nil else {
-				throw ParsingError()
+                throw MetadataError.duplicateStream(name: stream.name)
 			}
 
 			streams[stream.name] = StreamInfo(
@@ -268,7 +280,7 @@ struct MetadataInfo {
 				let searchRange = buffer.prefix(limit)
 
 				guard let nameLength = searchRange.firstIndex(of: 0) else {
-					throw ParsingError()
+                    throw MetadataError.missingNullTerminator
 				}
 
 				return (
@@ -281,7 +293,7 @@ struct MetadataInfo {
 			}
 			try input.seek(toRelativeOffset: paddedLength)
 			guard let name else {
-				throw ParsingError()
+                throw MetadataError.invalidStreamName
 			}
 			self.name = name
 		}

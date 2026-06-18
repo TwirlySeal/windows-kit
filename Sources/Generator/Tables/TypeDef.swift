@@ -5,13 +5,17 @@ struct TypeDef {
     let flags: TypeAttributes
     let typeName: String
     
+    enum TypeDefError: Error {
+        case invalidTypeAttributes
+    }
+    
     private init(metadata: MetadataDB, span: inout ParserSpan) throws {
         self.metadata = metadata
         
         guard
             let flags = TypeAttributes(rawValue: try UInt32(parsingLittleEndian: &span))
         else {
-            throw ParsingError()
+            throw TypeDefError.invalidTypeAttributes
         }
         self.flags = flags
         let typeNameIndex = try UInt32(parsingLittleEndian: &span, byteCount: metadata.ranges.heapSizes.stringSize)
