@@ -36,6 +36,7 @@ final class MetadataDB {
                 throw ParsingError()
             }
             try span.seek(toRange: range)
+            try span.seek(toRelativeOffset: offset)
             return try String(parsingNulTerminated: &span)
         }
     }
