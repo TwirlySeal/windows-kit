@@ -66,8 +66,12 @@ final class MetadataDB {
                 throw MetadataError.missingTable
             }
             try span.seek(toRange: range)
-            try span.seek(toRelativeOffset: strides[table.rawValue] * rowIndex)
-            return try body(&span)
+            
+            let stride = strides[table.rawValue]
+            try span.seek(toRelativeOffset: stride * rowIndex)
+            
+            var rowSpan = try span.sliceSpan(objectStride: stride, objectCount: 1)
+            return try body(&rowSpan)
         }
     }
     
