@@ -17,66 +17,59 @@ struct Generator {
     static let cacheDirectoryName = ".winmd-cache"
     
     static func run() async throws {
+        let cachePath = URL(fileURLWithPath: FileManager.default.currentDirectoryPath)
+            .appending(
+                components: cacheDirectoryName, packageID, packageVersion,
+                directoryHint: .isDirectory
+            )
+        
+        try FileManager.default.createDirectory(at: cachePath, withIntermediateDirectories: true)
+        let successPath = cachePath.appending(component: ".success", directoryHint: .notDirectory)
+        
+        if FileManager.default.fileExists(atPath: successPath.path()) {
+            let metadataFileURLs = try FileManager.default.contentsOfDirectory(
+                at: cachePath,
+                includingPropertiesForKeys: nil,
+                options: .skipsHiddenFiles
+            )
+            for metadataFileURL in metadataFileURLs {
+                let data = try Data(contentsOf: metadataFileURL, options: .mappedIfSafe)
+                
+                // Test WinMD parser
+                let metadata = try MetadataDB(data: data)
+            }
+        } else {
+            try await runRemote(cachePath: cachePath)
+            FileManager.default.createFile(atPath: successPath.path(), contents: nil)
+        }
+    }
+    
+    static func runRemote(cachePath: URL) async throws {
         print("Locating package: \(packageID)")
         let packageResourceURL = try await getPackageDownloadURL(packageID: packageID, packageVersion: packageVersion)
 
         print("Downloading \(packageID) \(packageVersion)")
         let contents = try await download(url: packageResourceURL)
-
-        let cacheURL = URL(fileURLWithPath: FileManager.default.currentDirectoryPath)
-            .appendingPathComponent(cacheDirectoryName)
-        try FileManager.default.createDirectory(at: cacheURL, withIntermediateDirectories: true)
-
-        // try contents.write(to: cacheURL.appendingPathComponent("contracts.zip"))
         
         print("Extracting nupkg")
-        // Test zip parser
-        let zipEntries = try parseZip(byteSpan: contents.span)
+        let cdEntries = try parseZip(byteSpan: contents.span)
         
-        guard let cdEntry = zipEntries.first(where: { $0.fileName.hasPrefix("ref/netstandard2.0") }) else {
-            print("Missing")
-            return
+        for entry in cdEntries {
+            guard entry.fileName.hasPrefix("ref/netstandard2.0"),
+                  entry.fileName.hasSuffix(".winmd") else {
+                continue
+            }
+            
+            let zipEntry = try ZipEntry(span: contents.span, centralDirectoryEntry: entry)
+            
+            let filename = URL(filePath: zipEntry.fileName).lastPathComponent
+            let destination = cachePath.appending(component: filename)
+            
+            let data = try zipEntry.extract()
+            try data.write(to: destination)
+            
+            // Test WinMD parser
+            let metadata = try MetadataDB(data: data)
         }
-        
-        guard cdEntry.compressionMethod == .deflate else {
-            print("Not deflate")
-            return
-        }
-        
-        let zipEntry = try ZipEntry(span: contents.span, centralDirectoryEntry: cdEntry)
-        let filename = URL(filePath: zipEntry.fileName).lastPathComponent
-        
-        let mdPath = cacheURL.appending(component: filename)
-        
-        let data = try zipEntry.extract()
-        try data.write(to: mdPath)
-        print("Extracted")
-
-//        for entry in zip {
-//            let path = entry.info.name
-//            
-//            guard path.hasPrefix("ref/netstandard2.0"),
-//                  path.hasSuffix(".winmd"),
-//                  entry.info.type == .regular
-//            else {
-//                continue
-//            }
-//
-//            let filename = URL(fileURLWithPath: path).lastPathComponent
-//            let destinationURL = cacheURL.appendingPathComponent(filename)
-//
-//            if let fileData = entry.data {
-//                try fileData.write(to: destinationURL)
-//            }
-//        }
-//
-//        print("Parsing first metadata file")
-//        if let firstData = zip.first?.data {
-//            if let magicNumber = String(data: firstData.prefix(3), encoding: .ascii) {
-//                print(magicNumber)
-//            }
-//            let metadata = try MetadataDB(data: firstData)
-//        }
-
     }
 }

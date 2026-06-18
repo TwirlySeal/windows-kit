@@ -73,7 +73,7 @@ struct GeneralFlags: OptionSet {
 }
 
 public struct CentralDirectoryEntry {
-	public let compressionMethod: CompressionMethod
+	let compressionMethod: CompressionMethod
 	let crc32Checksum: UInt32
 	let compressedSize: UInt32
 	let uncompressedSize: UInt32
@@ -155,6 +155,13 @@ public struct ZipEntry: ~Copyable, ~Escapable {
     }
     
     public func extract() throws -> Data {
-        return try parseDeflate(span: self.span, uncompressedSize: Int(centralDirectoryEntry.uncompressedSize))
+        switch centralDirectoryEntry.compressionMethod {
+        case .stored:
+            return try Data(capacity: Int(centralDirectoryEntry.uncompressedSize)) { outputSpan in
+                try span.copy(output: &outputSpan)
+            }
+        case .deflate:
+            return try parseDeflate(span: self.span, uncompressedSize: Int(centralDirectoryEntry.uncompressedSize))
+        }
     }
 }

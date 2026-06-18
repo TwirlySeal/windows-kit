@@ -96,7 +96,6 @@ struct CanonicalHuffmanDecoder {
                 // Canonical Huffman assigns codes MSB first.
                 // We reverse the bits so the lookup table matches the incoming stream's bit-order.
                 let reverseIndex = Self.reverseBits(chunkIndex, bitCount: Self.chunkBits)
-//                let reverseIndex = reversedBits >> (16 - Self.chunkBits)
                 
                 let overflowOffset = chunkIndex - overflowStartIndex
                 

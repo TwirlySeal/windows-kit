@@ -36,10 +36,10 @@ let fixedDistanceDecoder = CanonicalHuffmanDecoder.fixedDistanceDecoder()
 public func parseDeflate(span: Span<UInt8>, uncompressedSize: Int) throws -> Data {
     var bitSpan = try BitSpan(span: span)
     
-    return try Data(capacity: uncompressedSize) { span in
+    return try Data(capacity: uncompressedSize) { outputSpan in
         var isFinalBlock = false
         while !isFinalBlock {
-            isFinalBlock = try parseDeflateBlock(span: &bitSpan, output: &span)
+            isFinalBlock = try parseDeflateBlock(span: &bitSpan, output: &outputSpan)
         }
     }
 }
