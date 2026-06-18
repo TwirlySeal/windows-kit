@@ -70,7 +70,7 @@ final class MetadataDB {
             let stride = strides[table.rawValue]
             try span.seek(toRelativeOffset: stride * rowIndex)
             
-            var rowSpan = try span.sliceSpan(objectStride: stride, objectCount: 1)
+            var rowSpan = try span.sliceSpan(byteCount: stride)
             return try body(&rowSpan)
         }
     }
