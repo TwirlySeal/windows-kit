@@ -18,7 +18,7 @@ struct TypeDef {
             throw TypeDefError.invalidTypeAttributes
         }
         self.flags = flags
-        let typeNameIndex = try UInt32(parsingLittleEndian: &span, byteCount: metadata.ranges.heapSizes.stringSize)
+        let typeNameIndex = try UInt32(parsingLittleEndian: &span, byteCount: metadata.heapSizes.stringSize)
         self.typeName = try metadata.string(at: Int(typeNameIndex))
     }
     

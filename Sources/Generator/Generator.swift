@@ -36,7 +36,7 @@ struct Generator {
                 let data = try Data(contentsOf: metadataFileURL, options: .mappedIfSafe)
                 
                 // Test WinMD parser
-                let metadata = try MetadataDB(data: data)
+                let metadata = try MetadataDB(parsing: data)
             }
         } else {
             try await runRemote(cachePath: cachePath)
@@ -69,7 +69,7 @@ struct Generator {
             try data.write(to: destination)
             
             // Test WinMD parser
-            let metadata = try MetadataDB(data: data)
+            let metadata = try MetadataDB(parsing: data)
         }
     }
 }
