@@ -26,8 +26,6 @@ enum MetadataError: Error {
     case invalidCompressedInteger
 }
 
-typealias TableSlots<Element> = InlineArray<64, Element>
-
 /// Manages the binary data of a metadata file and information needed to parse
 /// table rows. Lightweight view structs representing table rows are parsed on
 /// demand, and hold a reference to this class for indices into other tables.
@@ -39,9 +37,12 @@ final class MetadataDB {
     private let data: Data
     
     // Metadata stream
-    private let tables: TableSlots<ParserRange?>
-    private let rowCounts: TableSlots<UInt32>
-    private let strides: TableSlots<Int>
+    struct Table {
+        let range: ParserRange
+        let rowCount: UInt32
+        let stride: Int
+    }
+    private let tables: [64 of Table?]
 
     // Info
     let heapSizes: HeapSizes
@@ -62,12 +63,12 @@ final class MetadataDB {
     /// Parse one row of a table
     func withRowSpan<T>(in table: TableKind, rowIndex: Int, _ body: (inout ParserSpan) throws -> T) throws -> T {
         try data.withParserSpan { span in
-            guard let range = tables[table.rawValue] else {
+            guard let table = tables[table.rawValue] else {
                 throw MetadataError.missingTable
             }
-            try span.seek(toRange: range)
+            try span.seek(toRange: table.range)
             
-            let stride = strides[table.rawValue]
+            let stride = table.stride
             try span.seek(toRelativeOffset: stride * rowIndex)
             
             var rowSpan = try span.sliceSpan(byteCount: stride)
@@ -132,7 +133,7 @@ final class MetadataDB {
         self.sorted = try UInt64(parsingLittleEndian: &span)
 
         // Filter valid tables and parse Rows
-        var rowCounts = TableSlots<UInt32>(repeating: 0)
+        var rowCounts = [64 of UInt32](repeating: 0)
         for i in rowCounts.indices {
             guard valid & (1 << i) != 0 else {
                 continue
@@ -140,14 +141,12 @@ final class MetadataDB {
 
             rowCounts[i] = try UInt32(parsingLittleEndian: &span)
         }
-        self.rowCounts = rowCounts
 
         self.indexSizes = IndexSizes(rowCounts)
         self.codedIndexSizes = CodedIndexSizes(rowCounts)
 
         // Get table ranges
-        var strides = TableSlots<Int>(repeating: 0)
-        var tables = TableSlots<ParserRange?>(repeating: nil)
+        var tables = [64 of Table?](repeating: nil)
         for i in rowCounts.indices {
             let rowCount = rowCounts[i]
             guard rowCount > 0 else { continue }
@@ -157,14 +156,17 @@ final class MetadataDB {
             }
 
             let stride = kind.stride(heapSizes, indexSizes, codedIndexSizes)
-            strides[i] = stride
-
-            tables[i] = try span.sliceRange(
+            let range = try span.sliceRange(
                 objectStride: stride,
                 objectCount: rowCount
             )
+            
+            tables[i] = Table(
+                range: range,
+                rowCount: rowCount,
+                stride: stride
+            )
         }
-        self.strides = strides
         self.tables = tables
 
         // Heaps

@@ -258,7 +258,7 @@ struct IndexSizes {
 	let methodDef: UInt8
 	let property: UInt8
 
-	init(_ rowCounts: TableSlots<UInt32>) {
+	init(_ rowCounts: [64 of UInt32]) {
 		func indexSize(_ tableKind: TableKind) -> UInt8 {
 			let rowCount = rowCounts[tableKind.rawValue]
 			return if rowCount <= UInt16.max {
@@ -295,7 +295,7 @@ struct CodedIndexSizes {
 	let hasSemantics: UInt8
 	let resolutionScope: UInt8
 
-	init(_ rowCounts: TableSlots<UInt32>) {
+	init(_ rowCounts: [64 of UInt32]) {
 		func codedIndexSize<T: CodedIndexTag>(for type: T.Type) -> UInt8 {
 			// 2^(16 - tagBits)
 			let maxRows = 1 << (16 - type.bits)
