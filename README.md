@@ -1,7 +1,7 @@
 # Windows Kit
 
-The goal of this project is to provide idiomatic bindings to Windows APIs for
-the [Swift](https://swift.org/) programming language.
+The goal of this project is to provide an idiomatic Swift language projection of
+Windows APIs.
 
 To be able to call Windows APIs from Swift, we need to speak their ABI
 (Application Binary Interface) which defines how compiled programs can talk to
@@ -15,33 +15,24 @@ each other. There are 3 main ABIs used on Windows:
 3.  WinRT (Windows Runtime), which is based on COM but adds additional metadata
     to enable automatic generation of safe, idiomatic bindings
 
-We will be starting with modern Windows APIs based on WinRT, such as [WinUI
-3](https://learn.microsoft.com/en-us/windows/apps/winui/winui3/).
+Microsoft’s [win32metadata](https://github.com/microsoft/win32metadata) project
+also provides metadata for Win32 and COM APIs.
 
-WinRT APIs are described in
+Metadata is stored in
 [WinMD](https://learn.microsoft.com/en-us/uwp/winrt-cref/winmd-files) (Windows
-Metadata) files, which are encoded in a binary format called CLI metadata. We
-will parse these files according to the [format
-specification](https://ecma-international.org/wp-content/uploads/ECMA-335_6th_edition_june_2012.pdf)
-and use the metadata to generate Swift definitions for the APIs they describe.
+Metadata) files, which use the same binary format as .NET assemblies
+([ECMA-335](https://ecma-international.org/wp-content/uploads/ECMA-335_6th_edition_june_2012.pdf))
+and are distributed via [NuGet](https://www.nuget.org). We download and parse
+these files, then will use the metadata to generate Swift code for the APIs they
+describe. This generated Swift code will map Windows API constructs to
+equivalent Swift ones, such as Swift concurrency and errors. Finally, it will be
+distributed as a library that anyone can use to develop Windows apps using
+Swift.
 
-This generated Swift code will be distributed as a library that anyone can use
-to develop Windows apps using Swift.
+## Features
 
-## Swift resources
-
-- [Getting Started \|
-  Swift.org](https://docs.swift.org/swift-book/documentation/the-swift-programming-language/thebasics/)
-
-- [Enumerations](https://docs.swift.org/swift-book/documentation/the-swift-programming-language/enumerations)
-
-- [Closures](https://docs.swift.org/swift-book/documentation/the-swift-programming-language/closures)
-
-- [Structures and
-  Classes](https://docs.swift.org/swift-book/documentation/the-swift-programming-language/classesandstructures)
-
-- [Protocols](https://docs.swift.org/swift-book/documentation/the-swift-programming-language/protocols)
-
-- [Swift Binary Parsing
+- A WinMD parser made with [Swift Binary Parsing
   Documentation](https://apple.github.io/swift-binary-parsing/documentation/binaryparsing/)
-  (this is the library we are using to parse CLI metadata)
+
+- A ZIP format parser (also made with Swift Binary Parsing) and Deflate
+  decompressor for extracting `.nupkg` files from NuGet containing the metadata
