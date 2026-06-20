@@ -23,7 +23,9 @@ enum MetadataError: Error {
     case missingNullTerminator
     case invalidStreamName
     case missingTable
+    case indexOutOfBounds
     case invalidCompressedInteger
+    case invalidCodedIndexTag
 }
 
 /// Manages the binary data of a metadata file and information needed to parse
@@ -61,10 +63,15 @@ final class MetadataDB {
     }
     
     /// Parse one row of a table
+    /// Tables are one-indexed, meaning `rowIndex: n` gives the nth row.
     func withRowSpan<T>(in table: TableKind, rowIndex: Int, _ body: (inout ParserSpan) throws -> T) throws -> T {
         try data.withParserSpan { span in
             guard let table = tables[table.rawValue] else {
                 throw MetadataError.missingTable
+            }
+            let zeroBasedIndex = rowIndex - 1
+            guard zeroBasedIndex >= 0, zeroBasedIndex < table.rowCount else {
+                throw MetadataError.indexOutOfBounds
             }
             try span.seek(toRange: table.range)
             

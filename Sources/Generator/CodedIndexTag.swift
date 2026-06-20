@@ -1,7 +1,7 @@
 /// A coded index is an index into one of multiple possible tables
 ///
 /// See ECMA-335 II.24.2.6, page 274
-protocol CodedIndexTag {
+protocol CodedIndexTag: RawRepresentable where RawValue: FixedWidthInteger {
 	/// The number of bits used to encode the tag.
 	static var bits: Int { get }
 
@@ -9,21 +9,40 @@ protocol CodedIndexTag {
 	static var tables: [TableKind] { get }
 }
 
-enum TypeDefOrRef: Int, CodedIndexTag {
+struct CodedIndex<Tag: CodedIndexTag> {
+    let tag: Tag
+    let index: Tag.RawValue
+    
+    init?(rawValue: Tag.RawValue) throws {
+        let mask: Tag.RawValue = (1 << Tag.bits) - 1
+        let tagBits = rawValue & mask
+        guard let tag = Tag.init(rawValue: tagBits) else {
+            throw MetadataError.invalidCodedIndexTag
+        }
+        
+        let index = rawValue >> Tag.bits
+        if index == 0 { return nil }
+        
+        self.tag = tag
+        self.index = index
+    }
+}
+
+enum TypeDefOrRefTag: Int, CodedIndexTag {
 	static let bits = 2
 	static let tables: [TableKind] = [.typeDef, .typeRef, .typeSpec]
 
 	case typeDef, typeRef, typeSpec
 }
 
-enum HasConstant: Int, CodedIndexTag {
+enum HasConstantTag: Int, CodedIndexTag {
 	static let bits = 2
 	static let tables: [TableKind] = [.param, .field, .property]
 
 	case field, param, property
 }
 
-enum HasCustomAttribute: Int, CodedIndexTag {
+enum HasCustomAttributeTag: Int, CodedIndexTag {
 	static let bits = 5
 	static let tables: [TableKind] = [
 		.methodDef,
@@ -73,56 +92,56 @@ enum HasCustomAttribute: Int, CodedIndexTag {
 	case methodSpec
 }
 
-enum HasFieldMarshal: Int, CodedIndexTag {
+enum HasFieldMarshalTag: Int, CodedIndexTag {
 	static let bits = 1
 	static let tables: [TableKind] = [.field, .param]
 
 	case field, param
 }
 
-enum HasDeclSecurity: Int, CodedIndexTag {
+enum HasDeclSecurityTag: Int, CodedIndexTag {
 	static let bits = 2
 	static let tables: [TableKind] = [.typeDef, .methodDef, .assembly]
 
 	case typeDef, methodDef, assembly
 }
 
-enum MemberRefParent: Int, CodedIndexTag {
+enum MemberRefParentTag: Int, CodedIndexTag {
 	static let bits = 3
 	static let tables: [TableKind] = [.methodDef, .moduleRef, .typeDef, .typeRef, .typeSpec]
 
 	case typeDef, typeRef, moduleRef, methodDef, typeSpec
 }
 
-enum HasSemantics: Int, CodedIndexTag {
+enum HasSemanticsTag: Int, CodedIndexTag {
 	static let bits = 1
 	static let tables: [TableKind] = [.event, .property]
 
 	case event, property
 }
 
-enum MethodDefOrRef: Int, CodedIndexTag {
+enum MethodDefOrRefTag: Int, CodedIndexTag {
 	static let bits = 1
 	static let tables: [TableKind] = [.methodDef, .memberRef]
 
 	case methodDef, memberRef
 }
 
-enum MemberForwarded: Int, CodedIndexTag {
+enum MemberForwardedTag: Int, CodedIndexTag {
 	static let bits = 1
 	static let tables: [TableKind] = [.field, .methodDef]
 
 	case field, methodDef
 }
 
-enum Implementation: Int, CodedIndexTag {
+enum ImplementationTag: Int, CodedIndexTag {
 	static let bits = 2
 	static let tables: [TableKind] = [.file, .exportedType, .assemblyRef]
 
 	case file, assemblyRef, exportedType
 }
 
-enum CustomAttributeType: Int, CodedIndexTag {
+enum CustomAttributeTypeTag: Int, CodedIndexTag {
 	static let bits = 3
 	static let tables: [TableKind] = [.methodDef, .memberRef]
 
@@ -132,14 +151,14 @@ enum CustomAttributeType: Int, CodedIndexTag {
 	// Not used
 }
 
-enum ResolutionScope: Int, CodedIndexTag {
+enum ResolutionScopeTag: Int, CodedIndexTag {
 	static let bits = 2
 	static let tables: [TableKind] = [.module, .moduleRef, .assemblyRef, .typeRef]
 
 	case module, moduleRef, assemblyRef, typeRef
 }
 
-enum TypeOrMethodDef: Int, CodedIndexTag {
+enum TypeOrMethodDefTag: Int, CodedIndexTag {
 	static let bits = 1
 	static let tables: [TableKind] = [.typeDef, .methodDef]
 

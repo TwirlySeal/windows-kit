@@ -310,18 +310,18 @@ struct CodedIndexSizes {
 			}
 		}
 
-		hasConstant = codedIndexSize(for: HasConstant.self)
-		hasCustomAttribute = codedIndexSize(for: HasCustomAttribute.self)
-		customAttributeType = codedIndexSize(for: CustomAttributeType.self)
-		hasDeclSecurity = codedIndexSize(for: HasDeclSecurity.self)
-		typeDefOrRef = codedIndexSize(for: TypeDefOrRef.self)
-		implementation = codedIndexSize(for: Implementation.self)
-		hasFieldMarshal = codedIndexSize(for: HasFieldMarshal.self)
-		typeOrMethodDef = codedIndexSize(for: TypeOrMethodDef.self)
-		memberForwarded = codedIndexSize(for: MemberForwarded.self)
-		memberRefParent = codedIndexSize(for: MemberRefParent.self)
-		methodDefOrRef = codedIndexSize(for: MethodDefOrRef.self)
-		hasSemantics = codedIndexSize(for: HasSemantics.self)
-		resolutionScope = codedIndexSize(for: ResolutionScope.self)
+		hasConstant = codedIndexSize(for: HasConstantTag.self)
+		hasCustomAttribute = codedIndexSize(for: HasCustomAttributeTag.self)
+		customAttributeType = codedIndexSize(for: CustomAttributeTypeTag.self)
+		hasDeclSecurity = codedIndexSize(for: HasDeclSecurityTag.self)
+		typeDefOrRef = codedIndexSize(for: TypeDefOrRefTag.self)
+		implementation = codedIndexSize(for: ImplementationTag.self)
+		hasFieldMarshal = codedIndexSize(for: HasFieldMarshalTag.self)
+		typeOrMethodDef = codedIndexSize(for: TypeOrMethodDefTag.self)
+		memberForwarded = codedIndexSize(for: MemberForwardedTag.self)
+		memberRefParent = codedIndexSize(for: MemberRefParentTag.self)
+		methodDefOrRef = codedIndexSize(for: MethodDefOrRefTag.self)
+		hasSemantics = codedIndexSize(for: HasSemanticsTag.self)
+		resolutionScope = codedIndexSize(for: ResolutionScopeTag.self)
 	}
 }
