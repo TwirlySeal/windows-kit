@@ -7,7 +7,7 @@ struct TypeDef {
     let flags: TypeAttributes
     private let typeNameIndex: UInt32
     private let typeNamespaceIndex: UInt32
-    private let extendsIndex: CodedIndex<TypeDefOrRefTag>?
+    private let extendsIndex: CodedIndex<TypeDefOrRef.Tag>?
     private let fieldListIndex: UInt32
     private let methodListIndex: UInt32
     
@@ -70,7 +70,7 @@ struct TypeDef {
         self.typeNamespaceIndex = try UInt32(parsingLittleEndian: &span, byteCount: metadata.heapSizes.stringSize)
         
         let extendsValue = try UInt32(parsingLittleEndian: &span, byteCount: Int(metadata.codedIndexSizes.typeDefOrRef))
-        self.extendsIndex = try CodedIndex<TypeDefOrRefTag>(rawValue: Int(extendsValue))
+        self.extendsIndex = try CodedIndex<TypeDefOrRef.Tag>(rawValue: Int(extendsValue))
         
         self.fieldListIndex = try UInt32(parsingLittleEndian: &span, byteCount: Int(metadata.indexSizes.field))
         self.methodListIndex = try UInt32(parsingLittleEndian: &span, byteCount: Int(metadata.indexSizes.methodDef))
