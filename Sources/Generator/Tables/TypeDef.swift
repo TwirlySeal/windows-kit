@@ -44,7 +44,7 @@ struct TypeDef {
         get throws {
             let range = try metadata.listRowRange(
                 rowIndex: self.rowIndex,
-                startListIndex: Int(fieldListIndex),
+                startListIndex: Int(methodListIndex),
                 currentTable: .typeDef,
                 linkedTable: .methodDef
             ) { nextRowIndex in
