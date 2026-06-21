@@ -1,5 +1,7 @@
 enum TypeDefOrRef {
     case typeDef(TypeDef)
+    case typeRef(TypeRef)
+    case typeSpec(TypeSpec)
     
     enum Tag: Int, CodedIndexTag {
         static let bits = 2
@@ -14,8 +16,13 @@ enum TypeDefOrRef {
             let typeDef = try TypeDef(metadata: metadata, rowIndex: index.index)
             self = .typeDef(typeDef)
             
-        default:
-            fatalError("Not implemented yet")
+        case .typeRef:
+            let typeRef = try TypeRef(metadata: metadata, rowIndex: index.index)
+            self = .typeRef(typeRef)
+            
+        case .typeSpec:
+            let typeSpec = try TypeSpec(metadata: metadata, rowIndex: index.index)
+            self = .typeSpec(typeSpec)
         }
     }
 }

@@ -15,12 +15,20 @@ struct TypeDef {
         case invalidTypeAttributes
     }
     
-    var typeName: String {
+    var name: String {
         get throws { try metadata.string(at: Int(typeNameIndex)) }
     }
     
-    var typeNamespace: String {
+    var namespace: String {
         get throws { try metadata.string(at: Int(typeNamespaceIndex)) }
+    }
+    
+    var extends: TypeDefOrRef? {
+        get throws {
+            try extendsIndex.map { index in
+                try .init(metadata: metadata, index: index)
+            }
+        }
     }
     
     var fields: some Sequence<Field> {
