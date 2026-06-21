@@ -1,6 +1,8 @@
 struct TypeAttributes {
-	enum Visibility: UInt32, Maskable {
-		static let mask: UInt32 = 0x00000007
+    typealias RawValue = UInt32
+    
+	enum Visibility: RawValue, Maskable {
+		static let mask: RawValue = 0x00000007
 
 		case notPublic = 0x00000000
 		case `public` = 0x00000001
@@ -12,23 +14,23 @@ struct TypeAttributes {
 		case nestedFamORAssem = 0x00000007
 	}
 
-	enum ClassLayout: UInt32, Maskable {
-		static let mask: UInt32 = 0x00000018
+	enum ClassLayout: RawValue, Maskable {
+		static let mask: RawValue = 0x00000018
 
 		case autoLayout = 0x00000000
 		case sequentialLayout = 0x00000008
 		case explicitLayout = 0x00000010
 	}
 
-	enum ClassSemantics: UInt32, Maskable {
-		static let mask: UInt32 = 0x00000020
+	enum ClassSemantics: RawValue, Maskable {
+		static let mask: RawValue = 0x00000020
 
 		case `class` = 0x00000000
 		case interface = 0x00000020
 	}
 
 	struct SpecialSemantics: OptionSet {
-		let rawValue: UInt32
+		let rawValue: RawValue
 
 		static let abstract = Self(rawValue: 0x00000080)
 		static let sealed = Self(rawValue: 0x00000100)
@@ -36,14 +38,14 @@ struct TypeAttributes {
 	}
 
 	struct Implementation: OptionSet {
-		let rawValue: UInt32
+		let rawValue: RawValue
 
 		static let `import` = Self(rawValue: 0x00001000)
 		static let serializable = Self(rawValue: 0x00002000)
 	}
 
-	enum StringFormatting: UInt32, Maskable {
-		static let mask: UInt32 = 0x00030000
+	enum StringFormatting: RawValue, Maskable {
+		static let mask: RawValue = 0x00030000
 
 		case ansiClass = 0x00000000
 		case unicodeClass = 0x00010000
@@ -52,7 +54,7 @@ struct TypeAttributes {
 	}
 
 	struct Flags: OptionSet {
-		let rawValue: UInt32
+		let rawValue: RawValue
 
 		static let beforeFieldInit = 0x00100000
 
@@ -61,7 +63,7 @@ struct TypeAttributes {
 		static let isTypeForwarder = 0x00200000
 	}
 
-	private let rawValue: UInt32
+	private let rawValue: RawValue
 
 	let visibility: Visibility
 	let classLayout: ClassLayout
@@ -71,7 +73,7 @@ struct TypeAttributes {
 	let stringFormatting: StringFormatting
 	var flags: Flags { .init(rawValue: rawValue) }
 
-	init?(rawValue: UInt32) {
+	init?(rawValue: RawValue) {
 		guard
 			let visibility = Visibility(masking: rawValue),
 			let classLayout = ClassLayout(masking: rawValue),

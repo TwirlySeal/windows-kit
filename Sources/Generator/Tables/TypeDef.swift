@@ -2,6 +2,8 @@ import BinaryParsing
 
 struct TypeDef {
     private let metadata: MetadataDB
+    private let rowIndex: Int
+    
     let flags: TypeAttributes
     private let typeNameIndex: UInt32
     private let typeNamespaceIndex: UInt32
@@ -21,8 +23,43 @@ struct TypeDef {
         get throws { try metadata.string(at: Int(typeNamespaceIndex)) }
     }
     
-    private init(metadata: MetadataDB, span: inout ParserSpan) throws {
+    var fields: some Sequence<Field> {
+        get throws {
+            let range = try metadata.listRowRange(
+                rowIndex: self.rowIndex,
+                startListIndex: Int(fieldListIndex),
+                currentTable: .typeDef,
+                linkedTable: .field
+            ) { nextRowIndex in
+                Int(try Self(metadata: metadata, rowIndex: nextRowIndex).fieldListIndex)
+            }
+            
+            return try range.lazy.map { index in
+                try Field(metadata: self.metadata, rowIndex: index)
+            }
+        }
+    }
+    
+    var methods: some Sequence<MethodDef> {
+        get throws {
+            let range = try metadata.listRowRange(
+                rowIndex: self.rowIndex,
+                startListIndex: Int(fieldListIndex),
+                currentTable: .typeDef,
+                linkedTable: .methodDef
+            ) { nextRowIndex in
+                Int(try Self(metadata: metadata, rowIndex: nextRowIndex).methodListIndex)
+            }
+            
+            return try range.lazy.map { index in
+                try MethodDef(metadata: metadata, rowIndex: index)
+            }
+        }
+    }
+    
+    private init(metadata: MetadataDB, span: inout ParserSpan, rowIndex: Int) throws {
         self.metadata = metadata
+        self.rowIndex = rowIndex
         
         guard let flags = TypeAttributes(rawValue: try UInt32(parsingLittleEndian: &span)) else {
             throw TypeDefError.invalidTypeAttributes
@@ -41,7 +78,7 @@ struct TypeDef {
     
     init(metadata: MetadataDB, rowIndex: Int) throws {
         self = try metadata.withRowSpan(in: .typeDef, rowIndex: rowIndex) { span in
-            try Self(metadata: metadata, span: &span)
+            try Self(metadata: metadata, span: &span, rowIndex: rowIndex)
         }
     }
 }

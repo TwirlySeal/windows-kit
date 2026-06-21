@@ -62,8 +62,39 @@ final class MetadataDB {
         sorted & (1 << table.rawValue) != 0
     }
     
+    /// Calculates the row range in a linked table for a list column
+    func listRowRange(
+        rowIndex: Int,
+        startListIndex: Int,
+        currentTable: TableKind,
+        linkedTable: TableKind,
+        readNextPointer: (_ nextRowIndex: Int) throws -> Int
+    ) throws -> Range<Int> {
+        guard let currentTable = tables[currentTable.rawValue],
+              let linkedTable = tables[linkedTable.rawValue] else {
+            throw MetadataError.missingTable
+        }
+        
+        let endIndexExclusive: Int = if rowIndex < currentTable.rowCount {
+            // Defer to the caller to extract the pointer from the next row
+            
+            // While the caller could compute `rowIndex + 1` themselves, passing it
+            // as a parameter to the closure means `MetadataDB` owns the logic of how
+            // list columns work and the closure simply fetches the pointer at the provided
+            // row index.
+            try readNextPointer(rowIndex + 1)
+        } else {
+            // We are at the final row; span to the end of the linked table
+            Int(linkedTable.rowCount) + 1
+        }
+        
+        // If `startListIndex == endIndexExclusive`, the range is empty (Count: 0)
+        return startListIndex..<endIndexExclusive
+    }
+    
     /// Parse one row of a table
     /// Tables are one-indexed, meaning `rowIndex: n` gives the nth row.
+    /// This method will throw for `rowIndex: 0` as an index of 0 is reserved to mean null (no index)
     func withRowSpan<T>(in table: TableKind, rowIndex: Int, _ body: (inout ParserSpan) throws -> T) throws -> T {
         try data.withParserSpan { span in
             guard let table = tables[table.rawValue] else {
@@ -295,7 +326,7 @@ final class MetadataDB {
             }
         }
 
-        var sections: [Section]
+        let sections: [Section]
 
         init(parsing input: inout ParserSpan, _ numberOfSections: UInt16) throws {
             sections = try .init(count: Int(numberOfSections)) {
