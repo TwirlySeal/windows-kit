@@ -1,0 +1,71 @@
+/// A non-zero index into a table
+/// An index of 0 is reserved to mean null (no index)
+struct Index: RawRepresentable {
+    let rawValue: UInt32
+    
+    init?(rawValue: RawValue) {
+        if rawValue == 0 {
+            return nil
+        }
+        self.rawValue = rawValue
+    }
+}
+
+extension Index: Comparable {
+    static func < (lhs: Self, rhs: Self) -> Bool {
+        lhs.rawValue < rhs.rawValue
+    }
+}
+
+extension Index: Strideable {
+    typealias Stride = RawValue.Stride
+    
+    func distance(to other: Index) -> Stride {
+        Int(other.rawValue) - Int(self.rawValue)
+    }
+    
+    func advanced(by n: Stride) -> Index {
+        let targetValue = Int(self.rawValue) + n
+        
+        guard targetValue > 0,
+              let validValue = UInt32(exactly: targetValue)
+        else {
+            fatalError("Advanced out of valid Index bounds")
+        }
+        
+        return Index(rawValue: validValue)!
+    }
+}
+
+struct IndexSizes {
+    let assemblyRef: UInt8
+    let typeDef: UInt8
+    let event: UInt8
+    let field: UInt8
+    let genericParam: UInt8
+    let moduleRef: UInt8
+    let param: UInt8
+    let methodDef: UInt8
+    let property: UInt8
+
+    init(_ rowCounts: [64 of UInt32]) {
+        func indexSize(_ tableKind: TableKind) -> UInt8 {
+            let rowCount = rowCounts[tableKind.rawValue]
+            return if rowCount <= UInt16.max {
+                2
+            } else {
+                4
+            }
+        }
+
+        assemblyRef = indexSize(.assemblyRef)
+        typeDef = indexSize(.typeDef)
+        event = indexSize(.event)
+        field = indexSize(.field)
+        genericParam = indexSize(.genericParam)
+        moduleRef = indexSize(.moduleRef)
+        param = indexSize(.param)
+        methodDef = indexSize(.methodDef)
+        property = indexSize(.property)
+    }
+}

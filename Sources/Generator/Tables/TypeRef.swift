@@ -26,7 +26,7 @@ struct TypeRef {
         self.typeNamespaceIndex = try UInt32(parsingLittleEndian: &span, byteCount: metadata.heapSizes.stringSize)
     }
     
-    init(metadata: MetadataDB, rowIndex: Int) throws {
+    init(metadata: MetadataDB, rowIndex: Index) throws {
         self = try metadata.withRowSpan(in: .typeRef, rowIndex: rowIndex) { span in
             try Self(metadata: metadata, span: &span)
         }

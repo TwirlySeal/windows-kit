@@ -2,42 +2,43 @@ import BinaryParsing
 
 struct MethodDef {
     private let metadata: MetadataDB
-    private let rowIndex: Int
+    private let rowIndex: Index
     
     private let rva: UInt32
     let implFlags: MethodImplAttributes
     let flags: MethodAttributes
     private let nameIndex: UInt32
     private let signatureIndex: UInt32
-    private let paramListIndex: UInt32
+    private let paramListIndex: Index
     
     enum MethodDefError: Error {
         case invalidImplFlags
         case invalidFlags
+        case missingParamList
     }
     
     var name: String {
         get throws { try metadata.string(at: Int(nameIndex)) }
     }
     
-    var params: some Sequence<Param> {
+    var params: [Param] {
         get throws {
             let range = try metadata.listRowRange(
                 rowIndex: self.rowIndex,
-                startListIndex: Int(paramListIndex),
+                startListIndex: paramListIndex,
                 currentTable: .methodDef,
                 linkedTable: .param
-            ) { nextRowIndex in
-                Int(try Self(metadata: metadata, rowIndex: nextRowIndex).paramListIndex)
+            ) { rowIndex in
+                try Self(metadata: metadata, rowIndex: rowIndex).paramListIndex
             }
             
-            return try range.lazy.map { index in
-                try Param(metadata: self.metadata, rowIndex: index)
+            return try range.map { index in
+                try Param(metadata: metadata, rowIndex: index)
             }
         }
     }
     
-    private init(metadata: MetadataDB, span: inout ParserSpan, rowIndex: Int) throws {
+    private init(metadata: MetadataDB, span: inout ParserSpan, rowIndex: Index) throws {
         self.metadata = metadata
         self.rowIndex = rowIndex
         self.rva = try UInt32(parsingLittleEndian: &span)
@@ -54,10 +55,15 @@ struct MethodDef {
         
         self.nameIndex = try UInt32(parsingLittleEndian: &span, byteCount: metadata.heapSizes.stringSize)
         self.signatureIndex = try UInt32(parsingLittleEndian: &span, byteCount: metadata.heapSizes.blobSize)
-        self.paramListIndex = try UInt32(parsingLittleEndian: &span, byteCount: Int(metadata.indexSizes.param))
+        
+        let paramList = try UInt32(parsingLittleEndian: &span, byteCount: Int(metadata.indexSizes.param))
+        guard let paramListIndex = Index(rawValue: paramList) else {
+            throw MethodDefError.missingParamList
+        }
+        self.paramListIndex = paramListIndex
     }
     
-    init(metadata: MetadataDB, rowIndex: Int) throws {
+    init(metadata: MetadataDB, rowIndex: Index) throws {
         self = try metadata.withRowSpan(in: .methodDef, rowIndex: rowIndex) { span in
             try Self(metadata: metadata, span: &span, rowIndex: rowIndex)
         }

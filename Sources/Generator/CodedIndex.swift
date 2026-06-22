@@ -11,7 +11,7 @@ protocol CodedIndexTag: RawRepresentable where RawValue: FixedWidthInteger {
 
 struct CodedIndex<Tag: CodedIndexTag> {
     let tag: Tag
-    let index: Tag.RawValue
+    let index: Index
     
     init?(rawValue: Tag.RawValue) throws {
         let mask: Tag.RawValue = (1 << Tag.bits) - 1
@@ -20,8 +20,10 @@ struct CodedIndex<Tag: CodedIndexTag> {
             throw MetadataError.invalidCodedIndexTag
         }
         
-        let index = rawValue >> Tag.bits
-        if index == 0 { return nil }
+        let indexValue = Index.RawValue(rawValue >> Tag.bits)
+        guard let index = Index(rawValue: indexValue) else {
+            return nil
+        }
         
         self.tag = tag
         self.index = index

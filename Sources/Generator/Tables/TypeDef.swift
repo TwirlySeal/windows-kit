@@ -2,14 +2,14 @@ import BinaryParsing
 
 struct TypeDef {
     private let metadata: MetadataDB
-    private let rowIndex: Int
+    private let rowIndex: Index
     
     let flags: TypeAttributes
     private let typeNameIndex: UInt32
     private let typeNamespaceIndex: UInt32
     private let extendsIndex: CodedIndex<TypeDefOrRef.Tag>?
-    private let fieldListIndex: UInt32
-    private let methodListIndex: UInt32
+    private let fieldListIndex: Index?
+    private let methodListIndex: Index?
     
     enum TypeDefError: Error {
         case invalidTypeAttributes
@@ -31,41 +31,49 @@ struct TypeDef {
         }
     }
     
-    var fields: some Sequence<Field> {
+    var fields: [Field] {
         get throws {
-            let range = try metadata.listRowRange(
-                rowIndex: self.rowIndex,
-                startListIndex: Int(fieldListIndex),
-                currentTable: .typeDef,
-                linkedTable: .field
-            ) { nextRowIndex in
-                Int(try Self(metadata: metadata, rowIndex: nextRowIndex).fieldListIndex)
+            guard let fieldListIndex else {
+                return []
             }
             
-            return try range.lazy.map { index in
-                try Field(metadata: self.metadata, rowIndex: index)
+            let range = try metadata.listRowRange(
+                rowIndex: self.rowIndex,
+                startListIndex: fieldListIndex,
+                currentTable: .typeDef,
+                linkedTable: .field
+            ) { rowIndex in
+                try Self(metadata: metadata, rowIndex: rowIndex).fieldListIndex
+            }
+            
+            return try range.map { index in
+                try Field(metadata: metadata, rowIndex: index)
             }
         }
     }
     
-    var methods: some Sequence<MethodDef> {
+    var methods: [MethodDef] {
         get throws {
-            let range = try metadata.listRowRange(
-                rowIndex: self.rowIndex,
-                startListIndex: Int(methodListIndex),
-                currentTable: .typeDef,
-                linkedTable: .methodDef
-            ) { nextRowIndex in
-                Int(try Self(metadata: metadata, rowIndex: nextRowIndex).methodListIndex)
+            guard let methodListIndex else {
+                return []
             }
             
-            return try range.lazy.map { index in
+            let range = try metadata.listRowRange(
+                rowIndex: self.rowIndex,
+                startListIndex: methodListIndex,
+                currentTable: .typeDef,
+                linkedTable: .methodDef
+            ) { rowIndex in
+                try Self(metadata: metadata, rowIndex: rowIndex).methodListIndex
+            }
+            
+            return try range.map { index in
                 try MethodDef(metadata: metadata, rowIndex: index)
             }
         }
     }
     
-    private init(metadata: MetadataDB, span: inout ParserSpan, rowIndex: Int) throws {
+    private init(metadata: MetadataDB, span: inout ParserSpan, rowIndex: Index) throws {
         self.metadata = metadata
         self.rowIndex = rowIndex
         
@@ -80,11 +88,14 @@ struct TypeDef {
         let extendsValue = try UInt32(parsingLittleEndian: &span, byteCount: Int(metadata.codedIndexSizes.typeDefOrRef))
         self.extendsIndex = try CodedIndex<TypeDefOrRef.Tag>(rawValue: Int(extendsValue))
         
-        self.fieldListIndex = try UInt32(parsingLittleEndian: &span, byteCount: Int(metadata.indexSizes.field))
-        self.methodListIndex = try UInt32(parsingLittleEndian: &span, byteCount: Int(metadata.indexSizes.methodDef))
+        let fieldList = try UInt32(parsingLittleEndian: &span, byteCount: Int(metadata.indexSizes.field))
+        self.fieldListIndex = Index(rawValue: fieldList)
+        
+        let methodList = try UInt32(parsingLittleEndian: &span, byteCount: Int(metadata.indexSizes.methodDef))
+        self.methodListIndex = Index(rawValue: methodList)
     }
     
-    init(metadata: MetadataDB, rowIndex: Int) throws {
+    init(metadata: MetadataDB, rowIndex: Index) throws {
         self = try metadata.withRowSpan(in: .typeDef, rowIndex: rowIndex) { span in
             try Self(metadata: metadata, span: &span, rowIndex: rowIndex)
         }

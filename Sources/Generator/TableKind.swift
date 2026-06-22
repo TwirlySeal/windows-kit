@@ -246,36 +246,3 @@ enum TableKind: Int {
 		}
 	}
 }
-
-struct IndexSizes {
-	let assemblyRef: UInt8
-	let typeDef: UInt8
-	let event: UInt8
-	let field: UInt8
-	let genericParam: UInt8
-	let moduleRef: UInt8
-	let param: UInt8
-	let methodDef: UInt8
-	let property: UInt8
-
-	init(_ rowCounts: [64 of UInt32]) {
-		func indexSize(_ tableKind: TableKind) -> UInt8 {
-			let rowCount = rowCounts[tableKind.rawValue]
-			return if rowCount <= UInt16.max {
-				2
-			} else {
-				4
-			}
-		}
-
-		assemblyRef = indexSize(.assemblyRef)
-		typeDef = indexSize(.typeDef)
-		event = indexSize(.event)
-		field = indexSize(.field)
-		genericParam = indexSize(.genericParam)
-		moduleRef = indexSize(.moduleRef)
-		param = indexSize(.param)
-		methodDef = indexSize(.methodDef)
-		property = indexSize(.property)
-	}
-}

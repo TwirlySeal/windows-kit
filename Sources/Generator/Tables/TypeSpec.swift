@@ -10,7 +10,7 @@ struct TypeSpec {
         self.signatureIndex = try UInt32(parsingLittleEndian: &span, byteCount: metadata.heapSizes.blobSize)
     }
     
-    init(metadata: MetadataDB, rowIndex: Int) throws {
+    init(metadata: MetadataDB, rowIndex: Index) throws {
         self = try metadata.withRowSpan(in: .typeSpec, rowIndex: rowIndex) { span in
             try Self(metadata: metadata, span: &span)
         }
