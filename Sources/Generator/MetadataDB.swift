@@ -26,6 +26,7 @@ enum MetadataError: Error {
     case indexOutOfBounds
     case invalidCompressedInteger
     case invalidCodedIndexTag
+    case missingBlobHeap
 }
 
 /// Manages the binary data of a metadata file and information needed to parse
@@ -127,31 +128,44 @@ final class MetadataDB {
         }
     }
     
+    /// Max value: 0x1FFFFFFF
     static func parseCompressedUnsignedInteger(span: inout ParserSpan) throws -> UInt32 {
-        let b1 = try UInt32(parsingLittleEndian: &span, byteCount: 1)
+        // Compressed integers are stored in big endian
+        // This does not matter for single byte reads
+        let firstByte = try UInt32(parsingLittleEndian: &span, byteCount: 1)
         
-        if b1 >> 7 == 0b0 {
+        if firstByte >> 7 == 0b0 {
             // Bit 7 clear, value held in bits 6 through 0
-            return b1
+            return firstByte
             
-        } else if b1 >> 6 == 0b10 {
+        } else if firstByte >> 6 == 0b10 {
             // Bit 7 set, bit 6 clear, value held in bits 5 through 0 and the next byte
-            let b2 = try UInt32(parsingLittleEndian: &span, byteCount: 1)
-            return ((b1 & 0b0011_1111) << 8) | b2
+            let secondByte = try UInt32(parsingLittleEndian: &span, byteCount: 1)
+            return ((firstByte & 0b0011_1111) << 8) | secondByte
             
-        } else if b1 >> 5 == 0b110 {
+        } else if firstByte >> 5 == 0b110 {
             // Bit 7 and 6 set, bit 5 clear, value held in bits 4 through 0 and the next 3 bytes
-            let b2 = try UInt32(parsingLittleEndian: &span, byteCount: 1)
-            let b3 = try UInt32(parsingLittleEndian: &span, byteCount: 1)
-            let b4 = try UInt32(parsingLittleEndian: &span, byteCount: 1)
+            let remainingBytes = try UInt32(parsingBigEndian: &span, byteCount: 3)
             
-            return ((b1 & 0b0001_1111) << 24)
-                | (b2 << 16)
-                | (b3 << 8)
-                | b4
+            return ((firstByte & 0b0001_1111) << 24) | remainingBytes
             
         } else {
             throw MetadataError.invalidCompressedInteger
+        }
+    }
+    
+    func withBlobSpan<T>(at offset: Int, _ body: (inout ParserSpan) throws -> T) throws -> T {
+        try data.withParserSpan { span in
+            guard let blobHeap else {
+                throw MetadataError.missingBlobHeap
+            }
+            try span.seek(toRange: blobHeap)
+            try span.seek(toRelativeOffset: offset)
+            
+            let length = try Self.parseCompressedUnsignedInteger(span: &span)
+
+            var blobSpan = try span.sliceSpan(byteCount: length)
+            return try body(&blobSpan)
         }
     }
     
@@ -168,7 +182,7 @@ final class MetadataDB {
 
         // skip Reserved, MajorVersion, MinorVersion
         try span.seek(toRelativeOffset: 4+1+1)
-        self.heapSizes = HeapSizes(rawValue: try UInt8(parsingLittleEndian: &span, byteCount: 1))
+        self.heapSizes = HeapSizes(rawValue: try UInt8(parsing: &span))
 
         try span.seek(toRelativeOffset: 1) // skip Reserved
         let valid = try UInt64(parsingLittleEndian: &span)

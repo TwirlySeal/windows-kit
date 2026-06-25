@@ -21,14 +21,14 @@ extension Index: Strideable {
     typealias Stride = RawValue.Stride
     
     func distance(to other: Index) -> Stride {
-        Int(other.rawValue) - Int(self.rawValue)
+        self.rawValue.distance(to: other.rawValue)
     }
     
     func advanced(by n: Stride) -> Index {
-        let targetValue = Int(self.rawValue) + n
+        let targetValue = self.rawValue.advanced(by: n)
         
         guard targetValue > 0,
-              let validValue = UInt32(exactly: targetValue)
+              let validValue = RawValue(exactly: targetValue)
         else {
             fatalError("Advanced out of valid Index bounds")
         }
