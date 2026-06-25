@@ -21,6 +21,10 @@ struct MethodDef {
         get throws { try metadata.string(at: Int(nameIndex)) }
     }
     
+    var signature: MethodDefSig {
+        get throws { try MethodDefSig(metadata: metadata, at: Int(signatureIndex)) }
+    }
+    
     var params: [Param] {
         get throws {
             let range = try metadata.listRowRange(
