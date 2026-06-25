@@ -22,7 +22,7 @@ struct MethodDef {
     }
     
     var signature: MethodDefSig {
-        get throws { try MethodDefSig(metadata: metadata, at: Int(signatureIndex)) }
+        get throws { try .init(metadata: metadata, at: Int(signatureIndex)) }
     }
     
     var params: [Param] {

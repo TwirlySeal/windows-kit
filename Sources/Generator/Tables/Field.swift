@@ -14,6 +14,10 @@ struct Field {
         get throws { try metadata.string(at: Int(nameIndex)) }
     }
     
+    var signature: FieldSig {
+        get throws { try .init(metadata: metadata, at: Int(signatureIndex)) }
+    }
+    
     private init(metadata: MetadataDB, span: inout ParserSpan) throws {
         self.metadata = metadata
         guard let flags = FieldAttributes(rawValue: try UInt16(parsingLittleEndian: &span)) else {
