@@ -2,7 +2,11 @@ import BinaryParsing
 
 struct CustomMod {
     let required: Bool
-    let typeDefOrRefOrSpec: TypeDefOrRefOrSpecEncoded
+    let typeIndex: CodedIndex<TypeDefOrRef.Tag>
+    
+    enum CustomModError: Error {
+        case nullTypeIndex
+    }
     
     init?(span: inout ParserSpan) throws {
         switch try UInt8(parsing: &span) {
@@ -14,7 +18,11 @@ struct CustomMod {
             return nil
         }
         
-        self.typeDefOrRefOrSpec = try TypeDefOrRefOrSpecEncoded(parsing: &span)
+        let rawValue = try MetadataDB.parseCompressedUnsignedInteger(span: &span)
+        guard let typeIndex = try CodedIndex<TypeDefOrRef.Tag>(rawValue: Int(rawValue)) else {
+            throw CustomModError.nullTypeIndex
+        }
+        self.typeIndex = typeIndex
     }
     
     /// Parse an unknown number of custom modifiers with lookahead
