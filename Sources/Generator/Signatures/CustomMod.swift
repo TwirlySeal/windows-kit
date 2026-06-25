@@ -8,7 +8,7 @@ struct CustomMod {
         case nullTypeIndex
     }
     
-    init?(span: inout ParserSpan) throws {
+    init?(parsing span: inout ParserSpan) throws {
         switch try UInt8(parsing: &span) {
         case ElementType.cmodOpt:
             self.required = false
@@ -18,7 +18,7 @@ struct CustomMod {
             return nil
         }
         
-        let rawValue = try MetadataDB.parseCompressedUnsignedInteger(span: &span)
+        let rawValue = try MetadataDB.parseCompressedUnsignedInteger(from: &span)
         guard let typeIndex = try CodedIndex<TypeDefOrRef.Tag>(rawValue: Int(rawValue)) else {
             throw CustomModError.nullTypeIndex
         }
@@ -26,14 +26,14 @@ struct CustomMod {
     }
     
     /// Parse an unknown number of custom modifiers with lookahead
-    static func lookahead(parsing span: inout ParserSpan) throws -> [Self] {
+    static func parseZeroOrMore(from span: inout ParserSpan) throws -> [Self] {
         // It is not known how many custom modifiers there are,
         // so a copy of the span is made to try parsing one and the state change
         // is committed if successful
         var customMods = [Self]()
         while true {
             var copySpan = ParserSpan(span.bytes)
-            guard let customMod = try CustomMod(span: &copySpan) else {
+            guard let customMod = try CustomMod(parsing: &copySpan) else {
                 break
             }
             customMods.append(customMod)

@@ -8,7 +8,7 @@ struct MethodDefSig {
     private init(parsing span: inout ParserSpan) throws {
         self.header = try MethodHeader(parsing: &span)
         
-        let paramCount = try MetadataDB.parseCompressedUnsignedInteger(span: &span)
+        let paramCount = try MetadataDB.parseCompressedUnsignedInteger(from: &span)
         self.returnType = try RetType(parsing: &span)
         
         self.params = try [ParamToken](count: Int(paramCount)) {

@@ -11,7 +11,7 @@ struct RetType {
     }
     
     init(parsing span: inout ParserSpan) throws {
-        self.customModifiers = try CustomMod.lookahead(parsing: &span)
+        self.customModifiers = try CustomMod.parseZeroOrMore(from: &span)
         
         var copySpan = ParserSpan(span.bytes)
         switch try UInt8(parsing: &copySpan) {

@@ -63,6 +63,27 @@ final class MetadataDB {
         sorted & (1 << table.rawValue) != 0
     }
     
+    /// Parse one row of a table
+    /// Tables are one-indexed, meaning `rowIndex: n` gives the nth row.
+    func withRowSpan<T>(in table: TableKind, rowIndex: Index, _ body: (inout ParserSpan) throws -> T) throws -> T {
+        try data.withParserSpan { span in
+            guard let table = tables[table.rawValue] else {
+                throw MetadataError.missingTable
+            }
+            let zeroBasedIndex = Int(rowIndex.rawValue) - 1
+            guard zeroBasedIndex >= 0, zeroBasedIndex < table.rowCount else {
+                throw MetadataError.indexOutOfBounds
+            }
+            try span.seek(toRange: table.range)
+            
+            let stride = table.stride
+            try span.seek(toRelativeOffset: stride * zeroBasedIndex)
+            
+            var rowSpan = try span.sliceSpan(byteCount: stride)
+            return try body(&rowSpan)
+        }
+    }
+    
     /// Calculates the row range in a linked table for a list column
     func listRowRange(
         rowIndex: Index,
@@ -98,27 +119,6 @@ final class MetadataDB {
         return startListIndex..<endIndexExclusive
     }
     
-    /// Parse one row of a table
-    /// Tables are one-indexed, meaning `rowIndex: n` gives the nth row.
-    func withRowSpan<T>(in table: TableKind, rowIndex: Index, _ body: (inout ParserSpan) throws -> T) throws -> T {
-        try data.withParserSpan { span in
-            guard let table = tables[table.rawValue] else {
-                throw MetadataError.missingTable
-            }
-            let zeroBasedIndex = Int(rowIndex.rawValue) - 1
-            guard zeroBasedIndex >= 0, zeroBasedIndex < table.rowCount else {
-                throw MetadataError.indexOutOfBounds
-            }
-            try span.seek(toRange: table.range)
-            
-            let stride = table.stride
-            try span.seek(toRelativeOffset: stride * zeroBasedIndex)
-            
-            var rowSpan = try span.sliceSpan(byteCount: stride)
-            return try body(&rowSpan)
-        }
-    }
-    
     /// Read from the string heap
     func string(at offset: Int) throws -> String {
         try data.withParserSpan { span in
@@ -128,8 +128,23 @@ final class MetadataDB {
         }
     }
     
+    func withBlobSpan<T>(at offset: Int, _ body: (inout ParserSpan) throws -> T) throws -> T {
+        try data.withParserSpan { span in
+            guard let blobHeap else {
+                throw MetadataError.missingBlobHeap
+            }
+            try span.seek(toRange: blobHeap)
+            try span.seek(toRelativeOffset: offset)
+            
+            let length = try Self.parseCompressedUnsignedInteger(from: &span)
+
+            var blobSpan = try span.sliceSpan(byteCount: length)
+            return try body(&blobSpan)
+        }
+    }
+    
     /// Max value: 0x1FFFFFFF
-    static func parseCompressedUnsignedInteger(span: inout ParserSpan) throws -> UInt32 {
+    static func parseCompressedUnsignedInteger(from span: inout ParserSpan) throws -> UInt32 {
         // Compressed integers are stored in big endian
         // This does not matter for single byte reads
         let firstByte = try UInt32(parsingLittleEndian: &span, byteCount: 1)
@@ -151,21 +166,6 @@ final class MetadataDB {
             
         } else {
             throw MetadataError.invalidCompressedInteger
-        }
-    }
-    
-    func withBlobSpan<T>(at offset: Int, _ body: (inout ParserSpan) throws -> T) throws -> T {
-        try data.withParserSpan { span in
-            guard let blobHeap else {
-                throw MetadataError.missingBlobHeap
-            }
-            try span.seek(toRange: blobHeap)
-            try span.seek(toRelativeOffset: offset)
-            
-            let length = try Self.parseCompressedUnsignedInteger(span: &span)
-
-            var blobSpan = try span.sliceSpan(byteCount: length)
-            return try body(&blobSpan)
         }
     }
     

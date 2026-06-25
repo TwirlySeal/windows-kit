@@ -54,13 +54,13 @@ enum Type {
                 throw TypeError.invalidGenericInst
             }
             
-            let rawValue = try MetadataDB.parseCompressedUnsignedInteger(span: &span)
+            let rawValue = try MetadataDB.parseCompressedUnsignedInteger(from: &span)
             guard let typeIndex = try CodedIndex<TypeDefOrRef.Tag>(rawValue: Int(rawValue)) else {
                 throw TypeError.nullTypeIndex
             }
             self.typeIndex = typeIndex
             
-            let genArgCount = try MetadataDB.parseCompressedUnsignedInteger(span: &span)
+            let genArgCount = try MetadataDB.parseCompressedUnsignedInteger(from: &span)
             self.typeArgs = try [Type](count: Int(genArgCount)) {
                 try Type(parsing: &span)
             }
@@ -77,7 +77,7 @@ enum Type {
         }
         
         init(parsing span: inout ParserSpan) throws {
-            self.customModifiers = try CustomMod.lookahead(parsing: &span)
+            self.customModifiers = try CustomMod.parseZeroOrMore(from: &span)
             
             var copySpan = ParserSpan(span.bytes)
             if try UInt8(parsing: &copySpan) == ElementType.void {
@@ -145,7 +145,7 @@ enum Type {
             self = .array(type, shape)
             
         case ElementType.class:
-            let rawValue = try MetadataDB.parseCompressedUnsignedInteger(span: &span)
+            let rawValue = try MetadataDB.parseCompressedUnsignedInteger(from: &span)
             guard let type = try CodedIndex<TypeDefOrRef.Tag>(rawValue: Int(rawValue)) else {
                 throw TypeError.nullTypeIndex
             }
@@ -164,19 +164,19 @@ enum Type {
             self = .string
             
         case ElementType.szArray:
-            let customMods = try CustomMod.lookahead(parsing: &span)
+            let customMods = try CustomMod.parseZeroOrMore(from: &span)
             let type = try Type(parsing: &span)
             self = .vector(customMods, type)
             
         case ElementType.valueType:
-            let rawValue = try MetadataDB.parseCompressedUnsignedInteger(span: &span)
+            let rawValue = try MetadataDB.parseCompressedUnsignedInteger(from: &span)
             guard let type = try CodedIndex<TypeDefOrRef.Tag>(rawValue: Int(rawValue)) else {
                 throw TypeError.nullTypeIndex
             }
             self = .valueType(type)
             
         case ElementType.var:
-            let number = try MetadataDB.parseCompressedUnsignedInteger(span: &span)
+            let number = try MetadataDB.parseCompressedUnsignedInteger(from: &span)
             self = .genericTypeParameter(number)
             
         default:
