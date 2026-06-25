@@ -8,12 +8,6 @@ struct MethodDefSig {
     private init(parsing span: inout ParserSpan) throws {
         self.header = try MethodHeader(parsing: &span)
         
-        let genParamCount: UInt32 = if header.callingConvention == .generic {
-            try MetadataDB.parseCompressedUnsignedInteger(span: &span)
-        } else {
-            0
-        }
-        
         let paramCount = try MetadataDB.parseCompressedUnsignedInteger(span: &span)
         self.returnType = try RetType(parsing: &span)
         
@@ -36,8 +30,6 @@ struct MethodHeader: RawRepresentable {
         static let mask: UInt8 = 0b0001_1111
         
         case `default` = 0x00
-        case vararg = 0x05
-        case generic = 0x10
     }
     
     struct Flags: OptionSet {
