@@ -5,6 +5,10 @@ struct TypeSpec {
     
     private let signatureIndex: UInt32
     
+    var type: Type {
+        get throws { try .init(metadata: metadata, at: Int(signatureIndex)) }
+    }
+    
     private init(metadata: MetadataDB, span: inout ParserSpan) throws {
         self.metadata = metadata
         self.signatureIndex = try UInt32(parsingLittleEndian: &span, byteCount: metadata.heapSizes.blobSize)

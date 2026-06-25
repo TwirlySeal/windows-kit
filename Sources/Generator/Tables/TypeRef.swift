@@ -7,6 +7,14 @@ struct TypeRef {
     private let typeNameIndex: UInt32
     private let typeNamespaceIndex: UInt32
     
+    var resolutionScope: ResolutionScope? {
+        get throws {
+            try resolutionScopeIndex.map { index in
+                try ResolutionScope(metadata: metadata, index: index)
+            }
+        }
+    }
+    
     var name: String {
         get throws { try metadata.string(at: Int(typeNameIndex)) }
     }
