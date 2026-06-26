@@ -11,6 +11,7 @@ struct GenericParam {
     enum GenericParamError: Error {
         case invalidFlags
         case missingOwner
+        case invalidOwner
     }
     
     var owner: TypeOrMethodDef {
@@ -41,6 +42,9 @@ struct GenericParam {
         let ownerValue = try UInt32(parsingLittleEndian: &span, byteCount: Int(metadata.codedIndexSizes.typeOrMethodDef))
         guard let ownerIndex = try CodedIndex<TypeOrMethodDef.Tag>(rawValue: Int(ownerValue)) else {
             throw GenericParamError.missingOwner
+        }
+        guard ownerIndex.tag == .typeDef else {
+            throw GenericParamError.invalidOwner
         }
         self.ownerIndex = ownerIndex
         
