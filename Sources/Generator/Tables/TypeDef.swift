@@ -86,6 +86,19 @@ struct TypeDef {
         }
     }
     
+    var interfaceImpls: [InterfaceImpl] {
+        get throws {
+            let range = try metadata.equalRange(in: .interfaceImpl) { rowIndex in
+                try InterfaceImpl(metadata: metadata, rowIndex: rowIndex)
+                    .compareClassIndex(index: self.rowIndex)
+            }
+            
+            return try range.map { index in
+                try InterfaceImpl(metadata: metadata, rowIndex: index)
+            }
+        }
+    }
+    
     private init(metadata: MetadataDB, span: inout ParserSpan, rowIndex: Index) throws {
         self.metadata = metadata
         self.rowIndex = rowIndex
