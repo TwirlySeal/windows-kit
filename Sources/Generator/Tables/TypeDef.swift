@@ -99,6 +99,19 @@ struct TypeDef {
         }
     }
     
+    var classLayout: ClassLayout? {
+        get throws {
+            let range = try metadata.equalRange(in: .classLayout) { rowIndex in
+                try ClassLayout(metadata: metadata, rowIndex: rowIndex)
+                    .compareParentIndex(index: self.rowIndex)
+            }
+            
+            return try range.first.map { index in
+                try ClassLayout(metadata: metadata, rowIndex: index)
+            }
+        }
+    }
+    
     private init(metadata: MetadataDB, span: inout ParserSpan, rowIndex: Index) throws {
         self.metadata = metadata
         self.rowIndex = rowIndex
