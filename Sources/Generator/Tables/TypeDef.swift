@@ -73,6 +73,19 @@ struct TypeDef {
         }
     }
     
+    var genericParams: [GenericParam] {
+        get throws {
+            let range = try metadata.equalRange(in: .genericParam) { rowIndex in
+                try GenericParam(metadata: metadata, rowIndex: rowIndex)
+                    .compareOwnerIndex(index: self.rowIndex)
+            }
+            
+            return try range.map { index in
+                try GenericParam(metadata: metadata, rowIndex: index)
+            }
+        }
+    }
+    
     private init(metadata: MetadataDB, span: inout ParserSpan, rowIndex: Index) throws {
         self.metadata = metadata
         self.rowIndex = rowIndex

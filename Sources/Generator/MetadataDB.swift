@@ -135,11 +135,12 @@ final class MetadataDB {
     
     /// Finds the contiguous range of rows that match a target value
     /// Used for reverse lookups of rows in other tables that link to a given row
-    func equalRange(in tableID: TableID, _ compare: (inout ParserSpan) throws -> Ordering) throws -> Range<Index> {
+    func equalRange(in tableID: TableID, _ compare: (_ rowIndex: Index) throws -> Ordering) throws -> Range<Index> {
         guard let table = tables[tableID.rawValue] else {
             throw MetadataError.missingTable
         }
         
+        // Binary search
         var first = 0
         var count = Int(table.rowCount)
         
@@ -147,10 +148,10 @@ final class MetadataDB {
             let count2 = count / 2
             let middle = first + count2
             
+            // Convert 0-based math to 1-based Index
             let rowIndex = Index(rawValue: .init(middle + 1))!
             
-            // Convert 0-based math to 1-based Index
-            let ordering = try withRowSpan(in: tableID, rowIndex: rowIndex, compare)
+            let ordering = try compare(rowIndex)
             
             switch ordering {
             case .lessThan:
@@ -184,8 +185,9 @@ final class MetadataDB {
         in tableID: TableID,
         first: Int,
         last: Int,
-        _ compare: (inout ParserSpan) throws -> Ordering
+        _ compare: (_ rowIndex: Index) throws -> Ordering
     ) throws -> Int {
+        // Binary search
         var first = first
         var count = last - first
         
@@ -195,7 +197,7 @@ final class MetadataDB {
             
             let rowIndex = Index(rawValue: .init(middle + 1))!
             
-            let ordering = try withRowSpan(in: tableID, rowIndex: rowIndex, compare)
+            let ordering = try compare(rowIndex)
             
             if ordering == .lessThan {
                 first = middle + 1
@@ -212,8 +214,9 @@ final class MetadataDB {
         in tableID: TableID,
         first: Int,
         last: Int,
-        _ compare: (inout ParserSpan) throws -> Ordering
+        _ compare: (_ rowIndex: Index) throws -> Ordering
     ) throws -> Int {
+        // Binary search
         var first = first
         var count = last - first
         
@@ -223,7 +226,7 @@ final class MetadataDB {
             
             let rowIndex = Index(rawValue: .init(middle + 1))!
             
-            let ordering = try withRowSpan(in: tableID, rowIndex: rowIndex, compare)
+            let ordering = try compare(rowIndex)
             
             if ordering == .greaterThan {
                 count = count2
