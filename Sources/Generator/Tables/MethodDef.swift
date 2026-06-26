@@ -42,6 +42,19 @@ struct MethodDef {
         }
     }
     
+    var implMap: ImplMap? {
+        get throws {
+            let range = try metadata.equalRange(in: .implMap) { rowIndex in
+                try ImplMap(metadata: metadata, rowIndex: rowIndex)
+                    .compareMemberForwardedIndex(index: self.rowIndex)
+            }
+            
+            return try range.first.map { index in
+                try ImplMap(metadata: metadata, rowIndex: index)
+            }
+        }
+    }
+    
     private init(metadata: MetadataDB, span: inout ParserSpan, rowIndex: Index) throws {
         self.metadata = metadata
         self.rowIndex = rowIndex
