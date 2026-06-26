@@ -28,6 +28,7 @@ struct ImplMap {
         case invalidFlags
         case missingMemberForwarded
         case missingImportScope
+        case invalidMemberForwarded
     }
     
     private init(metadata: MetadataDB, span: inout ParserSpan) throws {
@@ -44,6 +45,9 @@ struct ImplMap {
         )
         guard let memberForwardedIndex = try CodedIndex<MemberForwarded.Tag>(rawValue: Int(memberForwardedValue)) else {
             throw ImplMapError.missingMemberForwarded
+        }
+        guard memberForwardedIndex.tag == .methodDef else {
+            throw ImplMapError.invalidMemberForwarded
         }
         self.memberForwardedIndex = memberForwardedIndex
         
