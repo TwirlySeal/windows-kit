@@ -12,6 +12,20 @@ extension Array {
     }
 }
 
+enum Ordering {
+    case lessThan
+    case equal
+    case greaterThan
+}
+
+extension Comparable {
+    func compare(to other: Self) -> Ordering {
+        if self < other { return .lessThan }
+        if self > other { return .greaterThan }
+        return .equal
+    }
+}
+
 enum MetadataError: Error {
     case missingMetadataStream
     case unknownTable
@@ -59,15 +73,15 @@ final class MetadataDB {
     private let guidHeap: ParserRange?
     private let blobHeap: ParserRange?
 
-    func isSorted(table: TableKind) -> Bool {
+    func isSorted(table: TableID) -> Bool {
         sorted & (1 << table.rawValue) != 0
     }
     
     /// Parse one row of a table
     /// Tables are one-indexed, meaning `rowIndex: n` gives the nth row.
-    func withRowSpan<T>(in table: TableKind, rowIndex: Index, _ body: (inout ParserSpan) throws -> T) throws -> T {
+    func withRowSpan<T>(in tableID: TableID, rowIndex: Index, _ body: (inout ParserSpan) throws -> T) throws -> T {
         try data.withParserSpan { span in
-            guard let table = tables[table.rawValue] else {
+            guard let table = tables[tableID.rawValue] else {
                 throw MetadataError.missingTable
             }
             let zeroBasedIndex = Int(rowIndex.rawValue) - 1
@@ -88,8 +102,8 @@ final class MetadataDB {
     func listRowRange(
         rowIndex: Index,
         startListIndex: Index,
-        currentTable: TableKind,
-        linkedTable: TableKind,
+        currentTable: TableID,
+        linkedTable: TableID,
         readPointer: (_ rowIndex: Index) throws -> Index?
     ) throws -> Range<Index> {
         guard let currentTable = tables[currentTable.rawValue],
@@ -117,6 +131,109 @@ final class MetadataDB {
         
         // If `startListIndex == endIndexExclusive`, the range is empty (Count: 0)
         return startListIndex..<endIndexExclusive
+    }
+    
+    /// Finds the contiguous range of rows that match a target value
+    /// Used for reverse lookups of rows in other tables that link to a given row
+    func equalRange(in tableID: TableID, _ compare: (inout ParserSpan) throws -> Ordering) throws -> Range<Index> {
+        guard let table = tables[tableID.rawValue] else {
+            throw MetadataError.missingTable
+        }
+        
+        var first = 0
+        var count = Int(table.rowCount)
+        
+        while count > 0 {
+            let count2 = count / 2
+            let middle = first + count2
+            
+            let rowIndex = Index(rawValue: .init(middle + 1))!
+            
+            // Convert 0-based math to 1-based Index
+            let ordering = try withRowSpan(in: tableID, rowIndex: rowIndex, compare)
+            
+            switch ordering {
+            case .lessThan:
+                first = middle + 1
+                count -= (count2 + 1)
+                
+            case .greaterThan:
+                count = count2
+                
+            case .equal:
+                // We found a match. Now we find the absolute first and last occurrences.
+                let firstMatch = try lowerBound(in: tableID, first: first, last: middle, compare)
+                
+                // 'first + count' represents the upper bound of the current search space.
+                let lastMatch = try upperBound(in: tableID, first: middle + 1, last: first + count, compare)
+                
+                let startIndex = Index(rawValue: .init(firstMatch + 1))!
+                let exclusiveEndIndex = Index(rawValue: .init(lastMatch + 1))!
+                
+                return startIndex..<exclusiveEndIndex
+            }
+        }
+        
+        // If not found, return an empty range at the insertion point
+        let notFoundIndex = Index(rawValue: .init(first + 1))!
+        return notFoundIndex..<notFoundIndex
+    }
+    
+    /// Finds the first element in the range [first, last) that is not strictly less than the target
+    private func lowerBound(
+        in tableID: TableID,
+        first: Int,
+        last: Int,
+        _ compare: (inout ParserSpan) throws -> Ordering
+    ) throws -> Int {
+        var first = first
+        var count = last - first
+        
+        while count > 0 {
+            let count2 = count / 2
+            let middle = first + count2
+            
+            let rowIndex = Index(rawValue: .init(middle + 1))!
+            
+            let ordering = try withRowSpan(in: tableID, rowIndex: rowIndex, compare)
+            
+            if ordering == .lessThan {
+                first = middle + 1
+                count -= (count2 + 1)
+            } else {
+                count = count2
+            }
+        }
+        return first
+    }
+    
+    /// Finds the first element in the range [first, last) that is strictly greater than the target
+    private func upperBound(
+        in tableID: TableID,
+        first: Int,
+        last: Int,
+        _ compare: (inout ParserSpan) throws -> Ordering
+    ) throws -> Int {
+        var first = first
+        var count = last - first
+        
+        while count > 0 {
+            let count2 = count / 2
+            let middle = first + count2
+            
+            let rowIndex = Index(rawValue: .init(middle + 1))!
+            
+            let ordering = try withRowSpan(in: tableID, rowIndex: rowIndex, compare)
+            
+            if ordering == .greaterThan {
+                count = count2
+                
+            } else {
+                first = middle + 1
+                count -= (count2 + 1)
+            }
+        }
+        return first
     }
     
     /// Read from the string heap
@@ -207,7 +324,7 @@ final class MetadataDB {
             let rowCount = rowCounts[i]
             guard rowCount > 0 else { continue }
 
-            guard let kind = TableKind(rawValue: i) else {
+            guard let kind = TableID(rawValue: i) else {
                 throw MetadataError.unknownTable
             }
 

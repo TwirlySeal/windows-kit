@@ -2,7 +2,7 @@
 /// correspond to each table
 ///
 /// See ECMA-335 II.22 - Metadata logical format: tables
-enum TableKind: Int {
+enum TableID: Int {
 	case assembly = 0x20
 	case assemblyOS = 0x22
 	case assemblyProcessor = 0x21

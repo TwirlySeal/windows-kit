@@ -49,7 +49,7 @@ struct IndexSizes {
     let property: UInt8
 
     init(_ rowCounts: [64 of UInt32]) {
-        func indexSize(_ tableKind: TableKind) -> UInt8 {
+        func indexSize(_ tableKind: TableID) -> UInt8 {
             let rowCount = rowCounts[tableKind.rawValue]
             return if rowCount <= UInt16.max {
                 2

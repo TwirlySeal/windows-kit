@@ -1,7 +1,7 @@
 enum HasCustomAttribute {
     enum Tag: Int, CodedIndexTag {
         static let bits = 5
-        static let tables: [TableKind] = [
+        static let tables: [TableID] = [
             .methodDef,
             .field,
             .typeRef,

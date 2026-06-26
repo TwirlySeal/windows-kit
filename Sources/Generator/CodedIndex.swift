@@ -6,7 +6,7 @@ protocol CodedIndexTag: RawRepresentable where RawValue: FixedWidthInteger {
 	static var bits: Int { get }
 
 	// The tables that the index may point into.
-	static var tables: [TableKind] { get }
+	static var tables: [TableID] { get }
 }
 
 struct CodedIndex<Tag: CodedIndexTag> {
