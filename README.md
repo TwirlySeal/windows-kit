@@ -34,8 +34,8 @@ Windows apps using Swift.
 
 - Downloads Windows Metadata from the NuGet Server API and caches it locally
 
-- A WinMD parser made with [Swift Binary Parsing
-  Documentation](https://apple.github.io/swift-binary-parsing/documentation/binaryparsing/)
+- A WinMD parser made with [Swift Binary
+  Parsing](https://apple.github.io/swift-binary-parsing/documentation/binaryparsing/)
 
 - A ZIP format parser (also made with Swift Binary Parsing) and Deflate
   decompressor for extracting `.nupkg` files from NuGet containing the metadata
