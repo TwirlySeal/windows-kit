@@ -53,7 +53,9 @@ final class MetadataDB {
         sorted & (1 << table.rawValue) != 0
     }
     
-    /// Parse one row of a table
+    /// Provides temporary access to a span over the bytes in a table row. The size of the span
+    /// is equal to the stride of the table for safety.
+    ///
     /// Tables are one-indexed, meaning `rowIndex: n` gives the nth row.
     func withRowSpan<T>(in tableID: TableID, rowIndex: Index, _ body: (inout ParserSpan) throws -> T) throws -> T {
         try data.withParserSpan { span in
@@ -224,6 +226,8 @@ final class MetadataDB {
         }
     }
     
+    // Provides temporary access to a span over the bytes in a blob. Reads the compressed size index
+    // so the span ends at the end of the blob for safety.
     func withBlobSpan<T>(at offset: Int, _ body: (inout ParserSpan) throws -> T) throws -> T {
         try data.withParserSpan { span in
             guard let blobHeap else {
