@@ -22,17 +22,21 @@ Metadata is stored in
 [WinMD](https://learn.microsoft.com/en-us/uwp/winrt-cref/winmd-files) (Windows
 Metadata) files, which use the same binary format as .NET assemblies
 ([ECMA-335](https://ecma-international.org/wp-content/uploads/ECMA-335_6th_edition_june_2012.pdf))
-and are distributed via [NuGet](https://www.nuget.org). We download and parse
-these files, then will use the metadata to generate Swift code for the APIs they
-describe. This generated Swift code will map Windows API constructs to
-equivalent Swift ones, such as Swift concurrency and errors. Finally, it will be
-distributed as a library that anyone can use to develop Windows apps using
-Swift.
+and are distributed via [NuGet](https://www.nuget.org).
 
-## Features
+This project downloads and parses these files and generates Swift code for the
+APIs they describe. The generated Swift code implements the ABIs and maps
+Windows API constructs to equivalent Swift ones, such as Swift concurrency and
+errors. It will be distributed as libraries that anyone can use to develop
+Windows apps using Swift.
+
+## Currently Implemented Features
+
+- Downloads Windows Metadata from the NuGet Server API and caches it locally
 
 - A WinMD parser made with [Swift Binary Parsing
   Documentation](https://apple.github.io/swift-binary-parsing/documentation/binaryparsing/)
 
 - A ZIP format parser (also made with Swift Binary Parsing) and Deflate
   decompressor for extracting `.nupkg` files from NuGet containing the metadata
+  (these could be good to turn into separate libraries)
