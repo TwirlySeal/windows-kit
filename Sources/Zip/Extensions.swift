@@ -1,6 +1,14 @@
 import Foundation
 
-// Hopefully these get added to the standard library
+extension Array {
+    init<E: Error>(count: Int, element: () throws(E) -> Element) throws(E) {
+        self.init()
+        self.reserveCapacity(count)
+        for _ in 0..<count {
+            self.append(try element())
+        }
+    }
+}
 
 extension Span<UInt8> {
     enum CopyError: Error {

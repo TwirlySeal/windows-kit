@@ -19,16 +19,6 @@ enum DeflateError: Error {
     case invalidDistancePointer
 }
 
-extension Array {
-    init<E: Error>(count: Int, element: () throws(E) -> Element) throws(E) {
-        self.init()
-        self.reserveCapacity(count)
-        for _ in 0..<count {
-            self.append(try element())
-        }
-    }
-}
-
 let fixedLiteralDecoder = CanonicalHuffmanDecoder.fixedLiteralDecoder()
 
 let fixedDistanceDecoder = CanonicalHuffmanDecoder.fixedDistanceDecoder()
