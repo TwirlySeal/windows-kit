@@ -70,8 +70,9 @@ row is non-null
 ([source](https://github.com/microsoft/windows-rs/blob/a1e9fce43c026221f62f0a149267cb6d7d3c607b/crates/libs/metadata/src/reader/file.rs#L523-L538)).
 
 I found this edge case when introducing the `Index` type which conforms to
-`RawRepresentable` and has a failable initializer that returns nil when the raw
-value is 0. This is an application of the [“parse, don’t
+[`RawRepresentable`](https://developer.apple.com/documentation/swift/rawrepresentable)
+and has a failable initializer that returns nil when the raw value is 0. This is
+an application of the [“parse, don’t
 validate”](https://lexi-lambda.github.io/blog/2019/11/05/parse-don-t-validate/)
 idiom by Alexis King:
 
@@ -92,6 +93,35 @@ considered.
 
 While this edge case will not arise in Windows Metadata, I kept my handling of
 it as a record of this realisation.
+
+## Bitmask constants
+
+Some columns are structures containing multiple pieces of information in their
+bit width, which can be isolated using bitmasks. These are defined in ‘§II.23.1
+Bitmasks and flags’, and `TypeAttributes` is an example.
+
+There are two kinds of information stored in bitmask constants:
+
+1.  Bit flags, which are independent. I found structs implementing the
+    [`OptionSet`](https://developer.apple.com/documentation/swift/optionset)
+    protocol are effective for representing these.
+
+2.  Multi-bit segments which have a closed set of mutually exclusive values.
+    These are best represented as enums with raw values, and I made a `Maskable`
+    protocol which uses a static `mask` property to provide a default `masking`
+    initializer that applies the bitmask and uses the resulting value as the raw
+    value.
+
+Most structures contain multiple option sets and enums, so each type is nested
+inside a greater struct where values of these types are available as properties.
+The outer struct has a failable initialiser that returns nil if any of the
+mutually exclusive values don’t match the defined enums. The usage site can then
+decide whether the nil case is an error.
+
+`OptionSet` fields are computed properties initialised from a single `rawValue`
+field, since they don’t fail. Enum fields are stored which duplicates
+information, but this keeps handling of the nil case in the initialiser instead
+of computed properties.
 
 # Heaps
 
