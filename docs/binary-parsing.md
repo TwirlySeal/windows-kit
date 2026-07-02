@@ -43,8 +43,29 @@ There are two types of indices:
 2.  Coded - an index into one of several tables. A few bits of the index value
     are reserved to define which table it targets.
 
-Indices are 1-based because an index of zero is reserved to mean a null index
-that does not index a row at all.
+## The `Index` type
+
+Indices to tables are 1-based because an index of zero is reserved to mean a
+null index that does not index a row at all. To make this safer, I applied the
+[“parse, don’t
+validate”](https://lexi-lambda.github.io/blog/2019/11/05/parse-don-t-validate/)
+idiom by Alexis King:
+
+- Validation (the brittle way): Checking `if index == 0` at the point of use. If
+  you forget the check, the code still compiles, but breaks at runtime when you
+  resolve the index.
+
+- Parsing (the robust way): I made an `Index` type which conforms to
+  [`RawRepresentable`](https://developer.apple.com/documentation/swift/rawrepresentable)
+  and has a failable initializer that returns nil when the raw value is 0. Now,
+  checks are moved to the boundaries of the program where indices are
+  constructed from raw values, and you cannot use it to look up a row without
+  the compiler forcing you to acknowledge the possibility of absence. Once those
+  checks have been performed, they never need to be checked again. The type
+  itself (`Index` vs `Optional<Index>`) proves the value is non-zero.
+
+`Index` also conforms to `Strideable` so ranges of indices can be represented
+with the same safety.
 
 ## List columns
 
@@ -69,30 +90,12 @@ range. This is evidenced by windows-rs which assumes the list column of the next
 row is non-null
 ([source](https://github.com/microsoft/windows-rs/blob/a1e9fce43c026221f62f0a149267cb6d7d3c607b/crates/libs/metadata/src/reader/file.rs#L523-L538)).
 
-I found this edge case when introducing the `Index` type which conforms to
-[`RawRepresentable`](https://developer.apple.com/documentation/swift/rawrepresentable)
-and has a failable initializer that returns nil when the raw value is 0. This is
-an application of the [“parse, don’t
-validate”](https://lexi-lambda.github.io/blog/2019/11/05/parse-don-t-validate/)
-idiom by Alexis King:
-
-- Validation (the brittle way): Checking `if index == 0` at the point of use. If
-  you forget the check, the code still compiles, but breaks at runtime when you
-  resolve the index.
-
-- Parsing (the robust way): Consuming the raw value, checking for 0, and
-  returning an `Index?`. Now, the type itself (`Index` vs `Optional<Index>`)
-  proves the value is non-zero. You cannot use it to look up a row without the
-  compiler forcing you to acknowledge the possibility of absence.
-
 I did not consider this edge case when originally writing the list function
-using raw Int indices, until the Index type made me realise that the list column
-in the next row could be null. This shows how encoding constraints in the type
-system allows the compiler to reveal logical consequences you have not
-considered.
-
-While this edge case will not arise in Windows Metadata, I kept my handling of
-it as a record of this realisation.
+using raw `Int` indices, until I introduced the `Index` type and the compiler
+revealed that the list column in the next row could be null. This shows how
+encoding constraints in the type system allows the compiler to reveal logical
+consequences you have not considered. While this edge case will not arise in
+Windows Metadata, I made the parser handle it because it is a neat find.
 
 ## Bitmask constants
 
