@@ -27,13 +27,11 @@ extension Index: Strideable {
     func advanced(by n: Stride) -> Index {
         let targetValue = self.rawValue.advanced(by: n)
         
-        guard targetValue > 0,
-              let validValue = RawValue(exactly: targetValue)
-        else {
+        guard targetValue > 0 else {
             fatalError("Advanced out of valid Index bounds")
         }
         
-        return Index(rawValue: validValue)!
+        return Index(rawValue: targetValue)!
     }
 }
 
