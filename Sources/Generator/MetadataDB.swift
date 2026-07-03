@@ -226,7 +226,7 @@ final class MetadataDB {
         }
     }
     
-    // Provides temporary access to a span over the bytes in a blob. Reads the compressed size index
+    // Provides temporary access to a span over the bytes in a blob. Reads the compressed size prefix
     // so the span ends at the end of the blob for safety.
     func withBlobSpan<T>(at offset: Int, _ body: (inout ParserSpan) throws -> T) throws -> T {
         try data.withParserSpan { span in
