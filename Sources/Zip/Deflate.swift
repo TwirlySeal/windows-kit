@@ -52,7 +52,7 @@ func parseDeflateBlock(span: inout BitSpan, output: inout OutputSpan<UInt8>) thr
         }
         
         let bytes = span.bytes.extracting(first: Int(length))
-        try bytes.copy(output: &output)
+        try bytes.copy(to: &output)
         try span.seek(toRelativeByteOffset: Int(length))
         
     case .fixedHuffman:

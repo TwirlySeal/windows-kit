@@ -15,7 +15,7 @@ enum CopyError: Error {
 }
 
 extension Span<UInt8> {
-    func copy(output: inout OutputSpan<UInt8>) throws {
+    func copy(to output: inout OutputSpan<UInt8>) throws {
         try self.withUnsafeBufferPointer { sourceBuffer in
             guard sourceBuffer.count > 0 else { return }
             

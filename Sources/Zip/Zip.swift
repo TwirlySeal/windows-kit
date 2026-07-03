@@ -158,7 +158,7 @@ public struct ZipEntry: ~Copyable, ~Escapable {
         switch centralDirectoryEntry.compressionMethod {
         case .stored:
             return try Data(capacity: Int(centralDirectoryEntry.uncompressedSize)) { outputSpan in
-                try span.copy(output: &outputSpan)
+                try span.copy(to: &outputSpan)
             }
         case .deflate:
             return try parseDeflate(span: self.span, uncompressedSize: Int(centralDirectoryEntry.uncompressedSize))
