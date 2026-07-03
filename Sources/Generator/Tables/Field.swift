@@ -1,14 +1,14 @@
 import BinaryParsing
 
+enum FieldError: Error {
+    case invalidFieldAttributes
+}
+
 struct Field {
     private let metadata: MetadataDB
     let flags: FieldAttributes
     private let nameIndex: UInt32
     private let signatureIndex: UInt32
-    
-    enum FieldError: Error {
-        case invalidFieldAttributes
-    }
     
     var name: String {
         get throws { try metadata.string(at: Int(nameIndex)) }

@@ -1,15 +1,15 @@
 import BinaryParsing
 
+enum InterfaceImplError: Error {
+    case missingClass
+    case missingInterface
+}
+
 struct InterfaceImpl {
     private let metadata: MetadataDB
     
     private let classIndex: Index
     private let interfaceIndex: CodedIndex<TypeDefOrRef.Tag>
-    
-    enum InterfaceImplError: Error {
-        case missingClass
-        case missingInterface
-    }
     
     var `class`: TypeDef {
         get throws { try TypeDef(metadata: metadata, rowIndex: classIndex) }

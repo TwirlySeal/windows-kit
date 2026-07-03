@@ -1,5 +1,12 @@
 import BinaryParsing
 
+enum ImplMapError: Error {
+    case invalidFlags
+    case missingMemberForwarded
+    case missingImportScope
+    case invalidMemberForwarded
+}
+
 struct ImplMap {
     private let metadata: MetadataDB
     
@@ -22,13 +29,6 @@ struct ImplMap {
     
     func compareMemberForwardedIndex(index: Index) -> Ordering {
         memberForwardedIndex.index.compare(to: index)
-    }
-    
-    enum ImplMapError: Error {
-        case invalidFlags
-        case missingMemberForwarded
-        case missingImportScope
-        case invalidMemberForwarded
     }
     
     private init(metadata: MetadataDB, span: inout ParserSpan) throws {

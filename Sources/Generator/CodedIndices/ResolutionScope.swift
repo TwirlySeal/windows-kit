@@ -1,3 +1,7 @@
+enum ResolutionScopeError: Error {
+    case invalidTable
+}
+
 enum ResolutionScope {
     case typeRef(TypeRef)
     case moduleRef(ModuleRef)
@@ -7,10 +11,6 @@ enum ResolutionScope {
         static let tables: [TableID] = [.module, .moduleRef, .assemblyRef, .typeRef]
 
         case module, moduleRef, assemblyRef, typeRef
-    }
-    
-    enum ResolutionScopeError: Error {
-        case invalidTable
     }
     
     init(metadata: MetadataDB, index: CodedIndex<Tag>) throws {

@@ -1,3 +1,7 @@
+enum HasConstantError: Error {
+    case invalidTable
+}
+
 enum HasConstant {
     case field(Field)
     
@@ -6,10 +10,6 @@ enum HasConstant {
         static let tables: [TableID] = [.param, .field, .property]
 
         case field, param, property
-    }
-    
-    enum HasConstantError: Error {
-        case invalidTable
     }
     
     init(metadata: MetadataDB, index: CodedIndex<Tag>) throws {

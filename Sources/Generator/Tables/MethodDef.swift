@@ -1,5 +1,11 @@
 import BinaryParsing
 
+enum MethodDefError: Error {
+    case invalidImplFlags
+    case invalidFlags
+    case missingParamList
+}
+
 struct MethodDef {
     private let metadata: MetadataDB
     private let rowIndex: Index
@@ -10,12 +16,6 @@ struct MethodDef {
     private let nameIndex: UInt32
     private let signatureIndex: UInt32
     private let paramListIndex: Index
-    
-    enum MethodDefError: Error {
-        case invalidImplFlags
-        case invalidFlags
-        case missingParamList
-    }
     
     var name: String {
         get throws { try metadata.string(at: Int(nameIndex)) }

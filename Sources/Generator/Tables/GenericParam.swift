@@ -1,5 +1,11 @@
 import BinaryParsing
 
+enum GenericParamError: Error {
+    case invalidFlags
+    case missingOwner
+    case invalidOwner
+}
+
 struct GenericParam {
     private let metadata: MetadataDB
     
@@ -7,12 +13,6 @@ struct GenericParam {
     let flags: GenericParamAttributes
     private let ownerIndex: CodedIndex<TypeOrMethodDef.Tag>
     private let nameIndex: UInt32
-    
-    enum GenericParamError: Error {
-        case invalidFlags
-        case missingOwner
-        case invalidOwner
-    }
     
     var owner: TypeOrMethodDef {
         get throws {

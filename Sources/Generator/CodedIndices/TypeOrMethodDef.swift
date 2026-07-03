@@ -1,3 +1,7 @@
+enum TypeOrMethodDefError: Error {
+    case invalidTable
+}
+
 enum TypeOrMethodDef {
     case typeDef(TypeDef)
     
@@ -6,10 +10,6 @@ enum TypeOrMethodDef {
         static let tables: [TableID] = [.typeDef, .methodDef]
         
         case typeDef, methodDef
-    }
-    
-    enum TypeOrMethodDefError: Error {
-        case invalidTable
     }
     
     init(metadata: MetadataDB, index: CodedIndex<Tag>) throws {

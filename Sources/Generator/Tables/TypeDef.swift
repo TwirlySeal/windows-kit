@@ -1,5 +1,9 @@
 import BinaryParsing
 
+enum TypeDefError: Error {
+    case invalidTypeAttributes
+}
+
 struct TypeDef {
     private let metadata: MetadataDB
     private let rowIndex: Index
@@ -10,10 +14,6 @@ struct TypeDef {
     private let extendsIndex: CodedIndex<TypeDefOrRef.Tag>?
     private let fieldListIndex: Index?
     private let methodListIndex: Index?
-    
-    enum TypeDefError: Error {
-        case invalidTypeAttributes
-    }
     
     var name: String {
         get throws { try metadata.string(at: Int(typeNameIndex)) }

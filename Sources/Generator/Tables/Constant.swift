@@ -1,5 +1,11 @@
 import BinaryParsing
 
+enum ConstantError: Error {
+    case invalidType
+    case missingParent
+    case invalidParent
+}
+
 struct Constant {
     private let metadata: MetadataDB
     
@@ -78,12 +84,6 @@ struct Constant {
                 }
             }
         }
-    }
-    
-    enum ConstantError: Error {
-        case invalidType
-        case missingParent
-        case invalidParent
     }
     
     private init(metadata: MetadataDB, span: inout ParserSpan) throws {

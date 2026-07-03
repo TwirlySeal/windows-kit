@@ -1,5 +1,10 @@
 import BinaryParsing
 
+enum NestedClassError: Error {
+    case missingNestedClass
+    case missingEnclosingClass
+}
+
 struct NestedClass {
     private let metadata: MetadataDB
     
@@ -12,11 +17,6 @@ struct NestedClass {
     
     var enclosingClass: TypeDef {
         get throws { try .init(metadata: metadata, rowIndex: enclosingClassIndex) }
-    }
-    
-    enum NestedClassError: Error {
-        case missingNestedClass
-        case missingEnclosingClass
     }
     
     private init(metadata: MetadataDB, span: inout ParserSpan) throws {

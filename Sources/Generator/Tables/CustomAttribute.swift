@@ -1,16 +1,16 @@
 import BinaryParsing
 
+enum CustomAttributeError: Error {
+    case missingParent
+    case missingType
+}
+
 struct CustomAttribute {
     private let metadata: MetadataDB
     
     private let parentIndex: CodedIndex<HasCustomAttribute.Tag>
     private let typeIndex: CodedIndex<CustomAttributeType.Tag>
     private let valueIndex: UInt32
-    
-    enum CustomAttributeError: Error {
-        case missingParent
-        case missingType
-    }
     
     private init(metadata: MetadataDB, span: inout ParserSpan) throws {
         self.metadata = metadata

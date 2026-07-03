@@ -1,15 +1,15 @@
 import BinaryParsing
 
+enum ClassLayoutError: Error {
+    case missingParent
+}
+
 struct ClassLayout {
     private let metadata: MetadataDB
     
     let packingSize: UInt16
     let classSize: UInt32
     private let parentIndex: Index
-    
-    enum ClassLayoutError: Error {
-        case missingParent
-    }
     
     var parent: TypeDef {
         get throws { try .init(metadata: metadata, rowIndex: parentIndex) }
