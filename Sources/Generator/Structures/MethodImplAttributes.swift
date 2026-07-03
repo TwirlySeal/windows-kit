@@ -17,6 +17,7 @@ struct MethodImplAttributes {
         case managed = 0x0000
     }
     
+    /// Implementation info and interop
     struct Flags: OptionSet {
         let rawValue: RawValue
         
