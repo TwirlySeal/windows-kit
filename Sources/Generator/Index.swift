@@ -1,3 +1,5 @@
+import BinaryParsing
+
 /// A non-zero index into a table
 /// An index of 0 is reserved to mean null (no index)
 struct Index: RawRepresentable {
@@ -8,6 +10,10 @@ struct Index: RawRepresentable {
             return nil
         }
         self.rawValue = rawValue
+    }
+    
+    init?(parsing span: inout ParserSpan, size: UInt8) throws {
+        self.init(rawValue: try .init(parsingLittleEndian: &span, byteCount: Int(size)))
     }
 }
 

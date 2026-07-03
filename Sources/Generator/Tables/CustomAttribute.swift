@@ -10,24 +10,28 @@ struct CustomAttribute {
     
     private let parentIndex: CodedIndex<HasCustomAttribute.Tag>
     private let typeIndex: CodedIndex<CustomAttributeType.Tag>
-    private let valueIndex: UInt32
+    private let valueIndex: HeapIndex
     
     private init(metadata: MetadataDB, span: inout ParserSpan) throws {
         self.metadata = metadata
         
-        let parentValue = try UInt32(parsingLittleEndian: &span, byteCount: Int(metadata.codedIndexSizes.hasCustomAttribute))
-        guard let parentIndex = try CodedIndex<HasCustomAttribute.Tag>(rawValue: Int(parentValue)) else {
+        guard let parentIndex = try CodedIndex<HasCustomAttribute.Tag>(
+            parsing: &span,
+            size: metadata.codedIndexSizes.hasCustomAttribute
+        ) else {
             throw CustomAttributeError.missingParent
         }
         self.parentIndex = parentIndex
         
-        let typeValue = try UInt32(parsingLittleEndian: &span, byteCount: Int(metadata.codedIndexSizes.customAttributeType))
-        guard let typeIndex = try CodedIndex<CustomAttributeType.Tag>(rawValue: Int(typeValue)) else {
+        guard let typeIndex = try CodedIndex<CustomAttributeType.Tag>(
+            parsing: &span,
+            size: metadata.codedIndexSizes.customAttributeType
+        ) else {
             throw CustomAttributeError.missingType
         }
         self.typeIndex = typeIndex
         
-        self.valueIndex = try UInt32(parsingLittleEndian: &span, byteCount: metadata.heapSizes.blobSize)
+        self.valueIndex = try HeapIndex(parsing: &span, size: metadata.heapSizes.blobSize)
     }
     
     init(metadata: MetadataDB, rowIndex: Index) throws {

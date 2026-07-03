@@ -22,14 +22,12 @@ struct NestedClass {
     private init(metadata: MetadataDB, span: inout ParserSpan) throws {
         self.metadata = metadata
         
-        let nestedClassValue = try UInt32(parsingLittleEndian: &span, byteCount: Int(metadata.indexSizes.typeDef))
-        guard let nestedClassIndex = Index(rawValue: nestedClassValue) else {
+        guard let nestedClassIndex = try Index(parsing: &span, size: metadata.indexSizes.typeDef) else {
             throw NestedClassError.missingNestedClass
         }
         self.nestedClassIndex = nestedClassIndex
         
-        let enclosingClassValue = try UInt32(parsingLittleEndian: &span, byteCount: Int(metadata.indexSizes.typeDef))
-        guard let enclosingClassIndex = Index(rawValue: enclosingClassValue) else {
+        guard let enclosingClassIndex = try Index(parsing: &span, size: metadata.indexSizes.typeDef) else {
             throw NestedClassError.missingEnclosingClass
         }
         self.enclosingClassIndex = enclosingClassIndex

@@ -9,18 +9,18 @@ struct TypeDef {
     private let rowIndex: Index
     
     let flags: TypeAttributes
-    private let typeNameIndex: UInt32
-    private let typeNamespaceIndex: UInt32
+    private let typeNameIndex: HeapIndex
+    private let typeNamespaceIndex: HeapIndex
     private let extendsIndex: CodedIndex<TypeDefOrRef.Tag>?
     private let fieldListIndex: Index?
     private let methodListIndex: Index?
     
     var name: String {
-        get throws { try metadata.string(at: Int(typeNameIndex)) }
+        get throws { try metadata.string(at: typeNameIndex) }
     }
     
     var namespace: String {
-        get throws { try metadata.string(at: Int(typeNamespaceIndex)) }
+        get throws { try metadata.string(at: typeNamespaceIndex) }
     }
     
     var extends: TypeDefOrRef? {
@@ -121,17 +121,14 @@ struct TypeDef {
         }
         self.flags = flags
         
-        self.typeNameIndex = try UInt32(parsingLittleEndian: &span, byteCount: metadata.heapSizes.stringSize)
-        self.typeNamespaceIndex = try UInt32(parsingLittleEndian: &span, byteCount: metadata.heapSizes.stringSize)
+        self.typeNameIndex = try HeapIndex(parsing: &span, size: metadata.heapSizes.stringSize)
+        self.typeNamespaceIndex = try HeapIndex(parsing: &span, size: metadata.heapSizes.stringSize)
         
-        let extendsValue = try UInt32(parsingLittleEndian: &span, byteCount: Int(metadata.codedIndexSizes.typeDefOrRef))
-        self.extendsIndex = try CodedIndex<TypeDefOrRef.Tag>(rawValue: Int(extendsValue))
+        self.extendsIndex = try CodedIndex<TypeDefOrRef.Tag>(parsing: &span, size: metadata.codedIndexSizes.typeDefOrRef)
         
-        let fieldList = try UInt32(parsingLittleEndian: &span, byteCount: Int(metadata.indexSizes.field))
-        self.fieldListIndex = Index(rawValue: fieldList)
+        self.fieldListIndex = try Index(parsing: &span, size: metadata.indexSizes.field)
         
-        let methodList = try UInt32(parsingLittleEndian: &span, byteCount: Int(metadata.indexSizes.methodDef))
-        self.methodListIndex = Index(rawValue: methodList)
+        self.methodListIndex = try Index(parsing: &span, size: metadata.indexSizes.methodDef)
     }
     
     init(metadata: MetadataDB, rowIndex: Index) throws {

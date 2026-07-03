@@ -24,8 +24,7 @@ struct ClassLayout {
         self.packingSize = try UInt16(parsingLittleEndian: &span)
         self.classSize = try UInt32(parsingLittleEndian: &span)
         
-        let parentValue = try UInt32(parsingLittleEndian: &span, byteCount: Int(metadata.indexSizes.typeDef))
-        guard let parentIndex = Index(rawValue: parentValue) else {
+        guard let parentIndex = try Index(parsing: &span, size: metadata.indexSizes.typeDef) else {
             throw ClassLayoutError.missingParent
         }
         self.parentIndex = parentIndex

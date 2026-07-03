@@ -19,7 +19,7 @@ struct CustomMod {
         }
         
         let rawValue = try MetadataDB.parseCompressedUnsignedInteger(from: &span)
-        guard let typeIndex = try CodedIndex<TypeDefOrRef.Tag>(rawValue: Int(rawValue)) else {
+        guard let typeIndex = try CodedIndex<TypeDefOrRef.Tag>(rawValue: rawValue) else {
             throw CustomModError.nullTypeIndex
         }
         self.typeIndex = typeIndex

@@ -1,5 +1,5 @@
 enum CustomAttributeType {
-    enum Tag: Int, CodedIndexTag {
+    enum Tag: Index.RawValue, CodedIndexTag {
         static let bits = 3
         static let tables: [TableID] = [.methodDef, .memberRef]
 

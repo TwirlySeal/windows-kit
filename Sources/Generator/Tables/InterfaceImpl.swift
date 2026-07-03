@@ -26,14 +26,15 @@ struct InterfaceImpl {
     private init(metadata: MetadataDB, span: inout ParserSpan) throws {
         self.metadata = metadata
         
-        let classValue = try UInt32(parsingLittleEndian: &span, byteCount: Int(metadata.indexSizes.typeDef))
-        guard let classIndex = Index(rawValue: classValue) else {
+        guard let classIndex = try Index(parsing: &span, size: metadata.indexSizes.typeDef) else {
             throw InterfaceImplError.missingClass
         }
         self.classIndex = classIndex
         
-        let interfaceValue = try UInt32(parsingLittleEndian: &span, byteCount: Int(metadata.codedIndexSizes.typeDefOrRef))
-        guard let interfaceIndex = try CodedIndex<TypeDefOrRef.Tag>(rawValue: Int(interfaceValue)) else {
+        guard let interfaceIndex = try CodedIndex<TypeDefOrRef.Tag>(
+            parsing: &span,
+            size: metadata.codedIndexSizes.typeDefOrRef
+        ) else {
             throw InterfaceImplError.missingInterface
         }
         self.interfaceIndex = interfaceIndex

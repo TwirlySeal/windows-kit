@@ -19,6 +19,14 @@ enum MetadataError: Error {
     case missingBlobHeap
 }
 
+struct HeapIndex {
+    let rawValue: UInt32
+    
+    init(parsing span: inout ParserSpan, size: Int) throws {
+        self.rawValue = try .init(parsingLittleEndian: &span, byteCount: size)
+    }
+}
+
 /// Manages the binary data of a metadata file and information needed to parse
 /// table rows. Lightweight view structs representing table rows are parsed on
 /// demand, and hold a reference to this class for indices into other tables.
@@ -218,23 +226,23 @@ final class MetadataDB {
     }
     
     /// Read from the string heap
-    func string(at offset: Int) throws -> String {
+    func string(at offset: HeapIndex) throws -> String {
         try data.withParserSpan { span in
             try span.seek(toRange: stringHeap)
-            try span.seek(toRelativeOffset: offset)
+            try span.seek(toRelativeOffset: offset.rawValue)
             return try String(parsingNulTerminated: &span)
         }
     }
     
     // Provides temporary access to a span over the bytes in a blob. Reads the compressed size prefix
     // so the span ends at the end of the blob for safety.
-    func withBlobSpan<T>(at offset: Int, _ body: (inout ParserSpan) throws -> T) throws -> T {
+    func withBlobSpan<T>(at offset: HeapIndex, _ body: (inout ParserSpan) throws -> T) throws -> T {
         try data.withParserSpan { span in
             guard let blobHeap else {
                 throw MetadataError.missingBlobHeap
             }
             try span.seek(toRange: blobHeap)
-            try span.seek(toRelativeOffset: offset)
+            try span.seek(toRelativeOffset: offset.rawValue)
             
             let length = try Self.parseCompressedUnsignedInteger(from: &span)
 
@@ -354,6 +362,7 @@ final class MetadataDB {
         }
     }
     
+    /// Index sizes for all heaps
     struct HeapSizes: OptionSet {
         let rawValue: UInt8
 

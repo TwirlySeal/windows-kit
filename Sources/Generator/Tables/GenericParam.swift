@@ -11,7 +11,7 @@ struct GenericParam {
     let number: UInt16
     let flags: GenericParamAttributes
     private let ownerIndex: CodedIndex<TypeOrMethodDef.Tag>
-    private let nameIndex: UInt32
+    private let nameIndex: HeapIndex
     
     var owner: TypeOrMethodDef {
         get throws {
@@ -21,7 +21,7 @@ struct GenericParam {
     
     var name: String {
         get throws {
-            try metadata.string(at: Int(nameIndex))
+            try metadata.string(at: nameIndex)
         }
     }
     
@@ -38,13 +38,15 @@ struct GenericParam {
         }
         self.flags = flags
         
-        let ownerValue = try UInt32(parsingLittleEndian: &span, byteCount: Int(metadata.codedIndexSizes.typeOrMethodDef))
-        guard let ownerIndex = try CodedIndex<TypeOrMethodDef.Tag>(rawValue: Int(ownerValue)) else {
+        guard let ownerIndex = try CodedIndex<TypeOrMethodDef.Tag>(
+            parsing: &span,
+            size: metadata.codedIndexSizes.typeOrMethodDef
+        ) else {
             throw GenericParamError.missingOwner
         }
         self.ownerIndex = ownerIndex
         
-        self.nameIndex = try UInt32(parsingLittleEndian: &span, byteCount: metadata.heapSizes.stringSize)
+        self.nameIndex = try HeapIndex(parsing: &span, size: metadata.heapSizes.stringSize)
     }
     
     init(metadata: MetadataDB, rowIndex: Index) throws {

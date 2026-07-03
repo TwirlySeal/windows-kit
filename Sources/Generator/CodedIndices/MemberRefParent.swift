@@ -1,5 +1,5 @@
 enum MemberRefParent {
-    enum Tag: Int, CodedIndexTag {
+    enum Tag: Index.RawValue, CodedIndexTag {
         static let bits = 3
         static let tables: [TableID] = [.methodDef, .moduleRef, .typeDef, .typeRef, .typeSpec]
 

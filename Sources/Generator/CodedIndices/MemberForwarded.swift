@@ -1,7 +1,7 @@
 enum MemberForwarded {
     case methodDef(MethodDef)
     
-    enum Tag: Int, CodedIndexTag {
+    enum Tag: Index.RawValue, CodedIndexTag {
         static let bits = 1
         static let tables: [TableID] = [.field, .methodDef]
 

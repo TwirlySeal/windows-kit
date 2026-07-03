@@ -3,15 +3,15 @@ import BinaryParsing
 struct TypeSpec {
     private let metadata: MetadataDB
     
-    private let signatureIndex: UInt32
+    private let signatureIndex: HeapIndex
     
     var type: Type {
-        get throws { try .init(metadata: metadata, at: Int(signatureIndex)) }
+        get throws { try .init(metadata: metadata, at: signatureIndex) }
     }
     
     private init(metadata: MetadataDB, span: inout ParserSpan) throws {
         self.metadata = metadata
-        self.signatureIndex = try UInt32(parsingLittleEndian: &span, byteCount: metadata.heapSizes.blobSize)
+        self.signatureIndex = try HeapIndex(parsing: &span, size: metadata.heapSizes.blobSize)
     }
     
     init(metadata: MetadataDB, rowIndex: Index) throws {

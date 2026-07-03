@@ -11,7 +11,7 @@ struct ImplMap {
     
     let mappingFlags: PInvokeAttributes
     private let memberForwardedIndex: CodedIndex<MemberForwarded.Tag>
-    private let importNameIndex: UInt32
+    private let importNameIndex: HeapIndex
     private let importScopeIndex: Index
     
     var memberForwarded: MemberForwarded {
@@ -19,7 +19,7 @@ struct ImplMap {
     }
     
     var importName: String {
-        get throws { try metadata.string(at: Int(importNameIndex)) }
+        get throws { try metadata.string(at: importNameIndex) }
     }
     
     var importScope: ModuleRef {
@@ -33,24 +33,24 @@ struct ImplMap {
     private init(metadata: MetadataDB, span: inout ParserSpan) throws {
         self.metadata = metadata
         
-        guard let mappingFlags = PInvokeAttributes(rawValue: try UInt16(parsingLittleEndian: &span)) else {
+        guard let mappingFlags = PInvokeAttributes(
+            rawValue: try UInt16(parsingLittleEndian: &span)
+        ) else {
             throw ImplMapError.invalidFlags
         }
         self.mappingFlags = mappingFlags
         
-        let memberForwardedValue = try UInt32(
-            parsingLittleEndian: &span,
-            byteCount: Int(metadata.codedIndexSizes.memberForwarded)
-        )
-        guard let memberForwardedIndex = try CodedIndex<MemberForwarded.Tag>(rawValue: Int(memberForwardedValue)) else {
+        guard let memberForwardedIndex = try CodedIndex<MemberForwarded.Tag>(
+            parsing: &span,
+            size: metadata.codedIndexSizes.memberForwarded
+        ) else {
             throw ImplMapError.missingMemberForwarded
         }
         self.memberForwardedIndex = memberForwardedIndex
         
-        self.importNameIndex = try UInt32(parsingLittleEndian: &span, byteCount: metadata.heapSizes.stringSize)
+        self.importNameIndex = try HeapIndex(parsing: &span, size: metadata.heapSizes.stringSize)
         
-        let importScopeValue = try UInt32(parsingLittleEndian: &span, byteCount: Int(metadata.indexSizes.moduleRef))
-        guard let importScopeIndex = Index(rawValue: importScopeValue) else {
+        guard let importScopeIndex = try Index(parsing: &span, size: metadata.indexSizes.moduleRef) else {
             throw ImplMapError.missingImportScope
         }
         self.importScopeIndex = importScopeIndex

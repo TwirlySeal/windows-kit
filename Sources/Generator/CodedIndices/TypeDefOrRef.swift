@@ -3,7 +3,7 @@ enum TypeDefOrRef {
     case typeRef(TypeRef)
     case typeSpec(TypeSpec)
     
-    enum Tag: Int, CodedIndexTag {
+    enum Tag: Index.RawValue, CodedIndexTag {
         static let bits = 2
         static let tables: [TableID] = [.typeDef, .typeRef, .typeSpec]
 

@@ -48,7 +48,7 @@ struct MethodDefSig {
         }
     }
     
-    init(metadata: MetadataDB, at offset: Int) throws {
+    init(metadata: MetadataDB, at offset: HeapIndex) throws {
         self = try metadata.withBlobSpan(at: offset) { span in
             try Self(parsing: &span)
         }

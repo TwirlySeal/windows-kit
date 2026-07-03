@@ -1,7 +1,9 @@
+import BinaryParsing
+
 /// A coded index is an index into one of multiple possible tables
 ///
 /// See ECMA-335 II.24.2.6, page 274
-protocol CodedIndexTag: RawRepresentable where RawValue: FixedWidthInteger {
+protocol CodedIndexTag: RawRepresentable where RawValue == Index.RawValue {
 	/// The number of bits used to encode the tag.
 	static var bits: Int { get }
 
@@ -20,13 +22,16 @@ struct CodedIndex<Tag: CodedIndexTag> {
             throw MetadataError.invalidCodedIndexTag
         }
         
-        let indexValue = Index.RawValue(rawValue >> Tag.bits)
-        guard let index = Index(rawValue: indexValue) else {
+        guard let index = Index(rawValue: rawValue >> Tag.bits) else {
             return nil
         }
         
         self.tag = tag
         self.index = index
+    }
+    
+    init?(parsing span: inout ParserSpan, size: UInt8) throws {
+        try self.init(rawValue: try .init(parsingLittleEndian: &span, byteCount: Int(size)))
     }
 }
 

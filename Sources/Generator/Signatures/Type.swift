@@ -55,7 +55,7 @@ enum Type {
             }
             
             let rawValue = try MetadataDB.parseCompressedUnsignedInteger(from: &span)
-            guard let typeIndex = try CodedIndex<TypeDefOrRef.Tag>(rawValue: Int(rawValue)) else {
+            guard let typeIndex = try CodedIndex<TypeDefOrRef.Tag>(rawValue: rawValue) else {
                 throw TypeError.nullTypeIndex
             }
             self.typeIndex = typeIndex
@@ -146,7 +146,7 @@ enum Type {
             
         case ElementType.class:
             let rawValue = try MetadataDB.parseCompressedUnsignedInteger(from: &span)
-            guard let type = try CodedIndex<TypeDefOrRef.Tag>(rawValue: Int(rawValue)) else {
+            guard let type = try CodedIndex<TypeDefOrRef.Tag>(rawValue: rawValue) else {
                 throw TypeError.nullTypeIndex
             }
             self = .class(type)
@@ -170,7 +170,7 @@ enum Type {
             
         case ElementType.valueType:
             let rawValue = try MetadataDB.parseCompressedUnsignedInteger(from: &span)
-            guard let type = try CodedIndex<TypeDefOrRef.Tag>(rawValue: Int(rawValue)) else {
+            guard let type = try CodedIndex<TypeDefOrRef.Tag>(rawValue: rawValue) else {
                 throw TypeError.nullTypeIndex
             }
             self = .valueType(type)
@@ -184,7 +184,7 @@ enum Type {
         }
     }
     
-    init(metadata: MetadataDB, at offset: Int) throws {
+    init(metadata: MetadataDB, at offset: HeapIndex) throws {
         self = try metadata.withBlobSpan(at: offset) { span in
             try Self(parsing: &span)
         }

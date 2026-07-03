@@ -1,7 +1,7 @@
 enum HasConstant {
     case field(Field)
     
-    enum Tag: Int, CodedIndexTag {
+    enum Tag: Index.RawValue, CodedIndexTag {
         static let bits = 2
         static let tables: [TableID] = [.param, .field, .property]
 

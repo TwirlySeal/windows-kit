@@ -10,7 +10,7 @@ struct Constant {
     
     let type: ConstantType
     private let parentIndex: CodedIndex<HasConstant.Tag>
-    private let valueIndex: UInt32
+    private let valueIndex: HeapIndex
     
     enum ConstantType {
         case int8
@@ -46,7 +46,7 @@ struct Constant {
     
     var value: ConstantValue {
         get throws {
-            try metadata.withBlobSpan(at: Int(valueIndex)) { span in
+            try metadata.withBlobSpan(at: valueIndex) { span in
                 switch self.type {
                 case .int8:
                     .int8(try Int8(parsing: &span))
@@ -126,13 +126,15 @@ struct Constant {
             throw ConstantError.invalidType
         }
         
-        let parentValue = try UInt32(parsingLittleEndian: &span, byteCount: Int(metadata.codedIndexSizes.hasConstant))
-        guard let parentIndex = try CodedIndex<HasConstant.Tag>(rawValue: Int(parentValue)) else {
+        guard let parentIndex = try CodedIndex<HasConstant.Tag>(
+            parsing: &span,
+            size: metadata.codedIndexSizes.hasConstant
+        ) else {
             throw ConstantError.missingParent
         }
         self.parentIndex = parentIndex
         
-        self.valueIndex = try UInt32(parsingLittleEndian: &span, byteCount: metadata.heapSizes.blobSize)
+        self.valueIndex = try HeapIndex(parsing: &span, size: metadata.heapSizes.blobSize)
     }
     
     init(metadata: MetadataDB, rowIndex: Index) throws {

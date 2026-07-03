@@ -4,8 +4,8 @@ struct TypeRef {
     private let metadata: MetadataDB
     
     private let resolutionScopeIndex: CodedIndex<ResolutionScope.Tag>?
-    private let typeNameIndex: UInt32
-    private let typeNamespaceIndex: UInt32
+    private let typeNameIndex: HeapIndex
+    private let typeNamespaceIndex: HeapIndex
     
     var resolutionScope: ResolutionScope? {
         get throws {
@@ -16,22 +16,22 @@ struct TypeRef {
     }
     
     var name: String {
-        get throws { try metadata.string(at: Int(typeNameIndex)) }
+        get throws { try metadata.string(at: typeNameIndex) }
     }
     
     var namespace: String {
-        get throws { try metadata.string(at: Int(typeNamespaceIndex)) }
+        get throws { try metadata.string(at: typeNamespaceIndex) }
     }
     
     private init(metadata: MetadataDB, span: inout ParserSpan) throws {
         self.metadata = metadata
-        let resolutionScopeValue = try UInt32(
-            parsingLittleEndian: &span,
-            byteCount: Int(metadata.codedIndexSizes.resolutionScope)
+        
+        self.resolutionScopeIndex = try CodedIndex<ResolutionScope.Tag>(
+            parsing: &span,
+            size: metadata.codedIndexSizes.resolutionScope
         )
-        self.resolutionScopeIndex = try CodedIndex<ResolutionScope.Tag>(rawValue: Int(resolutionScopeValue))
-        self.typeNameIndex = try UInt32(parsingLittleEndian: &span, byteCount: metadata.heapSizes.stringSize)
-        self.typeNamespaceIndex = try UInt32(parsingLittleEndian: &span, byteCount: metadata.heapSizes.stringSize)
+        self.typeNameIndex = try HeapIndex(parsing: &span, size: metadata.heapSizes.stringSize)
+        self.typeNamespaceIndex = try HeapIndex(parsing: &span, size: metadata.heapSizes.stringSize)
     }
     
     init(metadata: MetadataDB, rowIndex: Index) throws {

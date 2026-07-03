@@ -13,16 +13,16 @@ struct MethodDef {
     private let rva: UInt32
     let implFlags: MethodImplAttributes
     let flags: MethodAttributes
-    private let nameIndex: UInt32
-    private let signatureIndex: UInt32
+    private let nameIndex: HeapIndex
+    private let signatureIndex: HeapIndex
     private let paramListIndex: Index
     
     var name: String {
-        get throws { try metadata.string(at: Int(nameIndex)) }
+        get throws { try metadata.string(at: nameIndex) }
     }
     
     var signature: MethodDefSig {
-        get throws { try .init(metadata: metadata, at: Int(signatureIndex)) }
+        get throws { try .init(metadata: metadata, at: signatureIndex) }
     }
     
     var params: [Param] {
@@ -70,11 +70,10 @@ struct MethodDef {
         }
         self.flags = flags
         
-        self.nameIndex = try UInt32(parsingLittleEndian: &span, byteCount: metadata.heapSizes.stringSize)
-        self.signatureIndex = try UInt32(parsingLittleEndian: &span, byteCount: metadata.heapSizes.blobSize)
+        self.nameIndex = try HeapIndex(parsing: &span, size: metadata.heapSizes.stringSize)
+        self.signatureIndex = try HeapIndex(parsing: &span, size: metadata.heapSizes.blobSize)
         
-        let paramList = try UInt32(parsingLittleEndian: &span, byteCount: Int(metadata.indexSizes.param))
-        guard let paramListIndex = Index(rawValue: paramList) else {
+        guard let paramListIndex = try Index(parsing: &span, size: metadata.indexSizes.param) else {
             throw MethodDefError.missingParamList
         }
         self.paramListIndex = paramListIndex

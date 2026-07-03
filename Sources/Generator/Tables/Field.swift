@@ -7,15 +7,15 @@ enum FieldError: Error {
 struct Field {
     private let metadata: MetadataDB
     let flags: FieldAttributes
-    private let nameIndex: UInt32
-    private let signatureIndex: UInt32
+    private let nameIndex: HeapIndex
+    private let signatureIndex: HeapIndex
     
     var name: String {
-        get throws { try metadata.string(at: Int(nameIndex)) }
+        get throws { try metadata.string(at: nameIndex) }
     }
     
     var signature: FieldSig {
-        get throws { try .init(metadata: metadata, at: Int(signatureIndex)) }
+        get throws { try .init(metadata: metadata, at: signatureIndex) }
     }
     
     private init(metadata: MetadataDB, span: inout ParserSpan) throws {
@@ -24,8 +24,8 @@ struct Field {
             throw FieldError.invalidFieldAttributes
         }
         self.flags = flags
-        self.nameIndex = try UInt32(parsingLittleEndian: &span, byteCount: metadata.heapSizes.stringSize)
-        self.signatureIndex = try UInt32(parsingLittleEndian: &span, byteCount: metadata.heapSizes.blobSize)
+        self.nameIndex = try HeapIndex(parsing: &span, size: metadata.heapSizes.stringSize)
+        self.signatureIndex = try HeapIndex(parsing: &span, size: metadata.heapSizes.blobSize)
     }
     
     init(metadata: MetadataDB, rowIndex: Index) throws {

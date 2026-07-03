@@ -1,7 +1,7 @@
 enum TypeOrMethodDef {
     case typeDef(TypeDef)
     
-    enum Tag: Int, CodedIndexTag {
+    enum Tag: Index.RawValue, CodedIndexTag {
         static let bits = 1
         static let tables: [TableID] = [.typeDef, .methodDef]
         
