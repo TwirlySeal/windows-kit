@@ -10,11 +10,11 @@ extension Array {
     }
 }
 
+enum CopyError: Error {
+    case insufficientSpace
+}
+
 extension Span<UInt8> {
-    enum CopyError: Error {
-        case insufficientSpace
-    }
-    
     func copy(output: inout OutputSpan<UInt8>) throws {
         try self.withUnsafeBufferPointer { sourceBuffer in
             guard sourceBuffer.count > 0 else { return }
