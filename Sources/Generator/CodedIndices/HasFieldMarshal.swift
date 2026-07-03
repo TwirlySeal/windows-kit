@@ -3,6 +3,7 @@ enum HasFieldMarshal {
         static let bits = 1
         static let tables: [TableID] = [.field, .param]
 
-        case field, param
+        case field = 0
+        case param = 1
     }
 }

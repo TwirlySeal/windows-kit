@@ -1,7 +1,3 @@
-enum TypeOrMethodDefError: Error {
-    case invalidTable
-}
-
 enum TypeOrMethodDef {
     case typeDef(TypeDef)
     
@@ -9,7 +5,8 @@ enum TypeOrMethodDef {
         static let bits = 1
         static let tables: [TableID] = [.typeDef, .methodDef]
         
-        case typeDef, methodDef
+        case typeDef = 0
+//        case methodDef = 1
     }
     
     init(metadata: MetadataDB, index: CodedIndex<Tag>) throws {
@@ -17,9 +14,6 @@ enum TypeOrMethodDef {
         case .typeDef:
             let typeDef = try TypeDef(metadata: metadata, rowIndex: index.index)
             self = .typeDef(typeDef)
-            
-        default:
-            throw TypeOrMethodDefError.invalidTable
         }
     }
 }

@@ -3,6 +3,8 @@ enum HasDeclSecurity {
         static let bits = 2
         static let tables: [TableID] = [.typeDef, .methodDef, .assembly]
 
-        case typeDef, methodDef, assembly
+        case typeDef = 0
+        case methodDef = 1
+        case assembly = 2
     }
 }

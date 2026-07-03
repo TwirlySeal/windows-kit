@@ -7,7 +7,9 @@ enum TypeDefOrRef {
         static let bits = 2
         static let tables: [TableID] = [.typeDef, .typeRef, .typeSpec]
 
-        case typeDef, typeRef, typeSpec
+        case typeDef = 0
+        case typeRef = 1
+        case typeSpec = 2
     }
     
     init(metadata: MetadataDB, index: CodedIndex<Tag>) throws {

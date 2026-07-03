@@ -3,7 +3,6 @@ import BinaryParsing
 enum ConstantError: Error {
     case invalidType
     case missingParent
-    case invalidParent
 }
 
 struct Constant {
@@ -130,9 +129,6 @@ struct Constant {
         let parentValue = try UInt32(parsingLittleEndian: &span, byteCount: Int(metadata.codedIndexSizes.hasConstant))
         guard let parentIndex = try CodedIndex<HasConstant.Tag>(rawValue: Int(parentValue)) else {
             throw ConstantError.missingParent
-        }
-        guard parentIndex.tag == .field else {
-            throw ConstantError.invalidParent
         }
         self.parentIndex = parentIndex
         

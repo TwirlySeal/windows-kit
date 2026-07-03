@@ -1,7 +1,3 @@
-enum MemberForwardedError: Error {
-    case invalidTable
-}
-
 enum MemberForwarded {
     case methodDef(MethodDef)
     
@@ -9,7 +5,8 @@ enum MemberForwarded {
         static let bits = 1
         static let tables: [TableID] = [.field, .methodDef]
 
-        case field, methodDef
+        // case field = 0
+        case methodDef = 1
     }
     
     init(metadata: MetadataDB, index: CodedIndex<Tag>) throws {
@@ -17,8 +14,6 @@ enum MemberForwarded {
         case .methodDef:
             let methodDef = try MethodDef(metadata: metadata, rowIndex: index.index)
             self = .methodDef(methodDef)
-        default:
-            throw MemberForwardedError.invalidTable
         }
     }
 }

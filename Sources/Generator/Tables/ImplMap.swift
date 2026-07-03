@@ -4,7 +4,6 @@ enum ImplMapError: Error {
     case invalidFlags
     case missingMemberForwarded
     case missingImportScope
-    case invalidMemberForwarded
 }
 
 struct ImplMap {
@@ -45,9 +44,6 @@ struct ImplMap {
         )
         guard let memberForwardedIndex = try CodedIndex<MemberForwarded.Tag>(rawValue: Int(memberForwardedValue)) else {
             throw ImplMapError.missingMemberForwarded
-        }
-        guard memberForwardedIndex.tag == .methodDef else {
-            throw ImplMapError.invalidMemberForwarded
         }
         self.memberForwardedIndex = memberForwardedIndex
         

@@ -5,8 +5,6 @@ struct GenericParamAttributes {
         static let mask: RawValue = 0x0003
         
         case none = 0x0000
-        
-        // Disallowed cases:
         // case covariant = 0x0001
         // case contravariant = 0x0002
     }

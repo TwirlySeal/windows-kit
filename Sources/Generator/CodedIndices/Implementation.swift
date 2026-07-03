@@ -3,6 +3,8 @@ enum Implementation {
         static let bits = 2
         static let tables: [TableID] = [.file, .exportedType, .assemblyRef]
 
-        case file, assemblyRef, exportedType
+        case file = 0
+        case assemblyRef = 1
+        case exportedType = 2
     }
 }
