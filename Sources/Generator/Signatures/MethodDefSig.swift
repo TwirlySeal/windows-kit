@@ -12,6 +12,8 @@ struct MethodDefSig {
             static let mask: UInt8 = 0b0001_1111
             
             case `default` = 0x00
+//            case vararg = 0x05
+//            case generic = 0x10
         }
         
         struct Flags: OptionSet {

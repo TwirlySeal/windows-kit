@@ -15,16 +15,19 @@ enum TypeDefOrRef {
     init(metadata: MetadataDB, index: CodedIndex<Tag>) throws {
         switch index.tag {
         case .typeDef:
-            let typeDef = try TypeDef(metadata: metadata, rowIndex: index.index)
-            self = .typeDef(typeDef)
+            self = .typeDef(
+                try TypeDef(metadata: metadata, rowIndex: index.index)
+            )
             
         case .typeRef:
-            let typeRef = try TypeRef(metadata: metadata, rowIndex: index.index)
-            self = .typeRef(typeRef)
+            self = .typeRef(
+                try TypeRef(metadata: metadata, rowIndex: index.index)
+            )
             
         case .typeSpec:
-            let typeSpec = try TypeSpec(metadata: metadata, rowIndex: index.index)
-            self = .typeSpec(typeSpec)
+            self = .typeSpec(
+                try TypeSpec(metadata: metadata, rowIndex: index.index)
+            )
         }
     }
 }

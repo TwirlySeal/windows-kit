@@ -1,4 +1,5 @@
 enum ElementType {
+    // Constants not used in Windows Metadata are omitted
     static let void: UInt8 = 0x01
     static let boolean: UInt8 = 0x02
     static let char: UInt8 = 0x03

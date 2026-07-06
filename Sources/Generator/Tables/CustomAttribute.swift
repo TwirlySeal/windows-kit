@@ -3,6 +3,8 @@ import BinaryParsing
 enum CustomAttributeError: Error {
     case missingParent
     case missingType
+    case noHasThis
+    case nonVoidReturnType
 }
 
 struct CustomAttribute {
@@ -11,6 +13,38 @@ struct CustomAttribute {
     private let parentIndex: CodedIndex<HasCustomAttribute.Tag>
     private let typeIndex: CodedIndex<CustomAttributeType.Tag>
     private let valueIndex: HeapIndex
+    
+    var parent: HasCustomAttribute {
+        get throws {
+            try .init(metadata: metadata, index: parentIndex)
+        }
+    }
+    
+    var type: CustomAttributeType {
+        get throws {
+            try .init(metadata: metadata, index: typeIndex)
+        }
+    }
+    
+    var value: CustomAttrib {
+        get throws {
+            let methodDefSig = switch try type {
+            case .methodDef(let methodDef):
+                try methodDef.signature
+            case .memberRef(let memberRef):
+                try memberRef.signature
+            }
+            
+            guard methodDefSig.header.flags.contains(.hasThis) else {
+                throw CustomAttributeError.noHasThis
+            }
+            guard case .void = methodDefSig.returnType.kind else {
+                throw CustomAttributeError.nonVoidReturnType
+            }
+            
+            return try .init(metadata: metadata, at: valueIndex, params: methodDefSig.params)
+        }
+    }
     
     private init(metadata: MetadataDB, span: inout ParserSpan) throws {
         self.metadata = metadata

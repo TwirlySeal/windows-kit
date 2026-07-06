@@ -12,8 +12,9 @@ enum TypeOrMethodDef {
     init(metadata: MetadataDB, index: CodedIndex<Tag>) throws {
         switch index.tag {
         case .typeDef:
-            let typeDef = try TypeDef(metadata: metadata, rowIndex: index.index)
-            self = .typeDef(typeDef)
+            self = .typeDef(
+                try TypeDef(metadata: metadata, rowIndex: index.index)
+            )
         }
     }
 }

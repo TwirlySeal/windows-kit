@@ -1,38 +1,39 @@
 import BinaryParsing
 
+enum TypeError: Error {
+    case invalidGenericInst
+    case invalidType
+    case nullTypeIndex
+}
+
 enum Type {
     case boolean
     case char
-    
     case int8
     case uint8
-    
     case int16
     case uint16
-    
     case int32
     case uint32
-    
     case int64
     case uint64
-    
     case float32
     case float64
-    
     case int
     case uint
-    
-    indirect case array(Type, ArrayShape)
-    case `class`(CodedIndex<TypeDefOrRef.Tag>)
-    case genericInstance(GenericInstance)
-    case genericTypeParameter(UInt32)
     case object
-    indirect case pointer(Pointer)
     case string
     
+    indirect case array(element: Type, shape: ArrayShape)
+    case `class`(typeIndex: CodedIndex<TypeDefOrRef.Tag>)
+    case `enum`(name: String)
+    case genericInstance(GenericInstance)
+    case genericTypeParameter(index: UInt32)
+    indirect case pointer(Pointer)
+    
     // Single-dimensional, zero-based array
-    indirect case vector([CustomMod], Type)
-    case valueType(CodedIndex<TypeDefOrRef.Tag>)
+    indirect case vector(modifiers: [CustomMod], element: Type)
+    case valueType(typeIndex: CodedIndex<TypeDefOrRef.Tag>)
     
     struct GenericInstance {
         enum Kind {
@@ -89,12 +90,6 @@ enum Type {
         }
     }
     
-    enum TypeError: Error {
-        case invalidGenericInst
-        case invalidType
-        case nullTypeIndex
-    }
-    
     init(parsing span: inout ParserSpan) throws {
         switch try UInt8(parsing: &span) {
         case ElementType.boolean:
@@ -142,14 +137,14 @@ enum Type {
         case ElementType.array:
             let type = try Type(parsing: &span)
             let shape = try ArrayShape(parsing: &span)
-            self = .array(type, shape)
+            self = .array(element: type, shape: shape)
             
         case ElementType.class:
             let rawValue = try MetadataDB.parseCompressedUnsignedInteger(from: &span)
             guard let type = try CodedIndex<TypeDefOrRef.Tag>(rawValue: rawValue) else {
                 throw TypeError.nullTypeIndex
             }
-            self = .class(type)
+            self = .class(typeIndex: type)
             
         case ElementType.genericInst:
             self = .genericInstance(try GenericInstance(parsing: &span))
@@ -166,18 +161,24 @@ enum Type {
         case ElementType.szArray:
             let customMods = try CustomMod.parseZeroOrMore(from: &span)
             let type = try Type(parsing: &span)
-            self = .vector(customMods, type)
+            self = .vector(modifiers: customMods, element: type)
             
         case ElementType.valueType:
             let rawValue = try MetadataDB.parseCompressedUnsignedInteger(from: &span)
             guard let type = try CodedIndex<TypeDefOrRef.Tag>(rawValue: rawValue) else {
                 throw TypeError.nullTypeIndex
             }
-            self = .valueType(type)
+            self = .valueType(typeIndex: type)
             
         case ElementType.var:
             let number = try MetadataDB.parseCompressedUnsignedInteger(from: &span)
-            self = .genericTypeParameter(number)
+            self = .genericTypeParameter(index: number)
+            
+        case ElementType.enum:
+            // SERIALIZATION_TYPE_ENUM in custom attribute named argument format
+            // (ECMA-335 §II.23.1.16): followed by a SerString of the enum type name.
+            // Enums are always value types.
+            self = .enum(name: try serString(parsing: &span))
             
         default:
             throw TypeError.invalidType
