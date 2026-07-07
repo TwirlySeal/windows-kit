@@ -5,7 +5,7 @@ enum TypeDefError: Error {
 }
 
 struct TypeDef {
-    private let metadata: MetadataDB
+    private let file: MetadataFile
     private let rowIndex: Index
     
     let flags: TypeAttributes
@@ -16,17 +16,17 @@ struct TypeDef {
     private let methodListIndex: Index?
     
     var name: String {
-        get throws { try metadata.string(at: typeNameIndex) }
+        get throws { try file.string(at: typeNameIndex) }
     }
     
     var namespace: String {
-        get throws { try metadata.string(at: typeNamespaceIndex) }
+        get throws { try file.string(at: typeNamespaceIndex) }
     }
     
     var extends: TypeDefOrRef? {
         get throws {
             try extendsIndex.map { index in
-                try .init(in: metadata, at: index)
+                try .init(in: file, at: index)
             }
         }
     }
@@ -37,17 +37,17 @@ struct TypeDef {
                 return []
             }
             
-            let range = try metadata.listRowRange(
+            let range = try file.listRowRange(
                 rowIndex: self.rowIndex,
                 startListIndex: fieldListIndex,
                 currentTable: .typeDef,
                 linkedTable: .field
             ) { rowIndex in
-                try Self(in: metadata, at: rowIndex).fieldListIndex
+                try Self(in: file, at: rowIndex).fieldListIndex
             }
             
             return try range.map { index in
-                try Field(in: metadata, at: index)
+                try Field(in: file, at: index)
             }
         }
     }
@@ -58,45 +58,45 @@ struct TypeDef {
                 return []
             }
             
-            let range = try metadata.listRowRange(
+            let range = try file.listRowRange(
                 rowIndex: self.rowIndex,
                 startListIndex: methodListIndex,
                 currentTable: .typeDef,
                 linkedTable: .methodDef
             ) { rowIndex in
-                try Self(in: metadata, at: rowIndex).methodListIndex
+                try Self(in: file, at: rowIndex).methodListIndex
             }
             
             return try range.map { index in
-                try MethodDef(in: metadata, at: index)
+                try MethodDef(in: file, at: index)
             }
         }
     }
     
     var genericParams: [GenericParam] {
         get throws {
-            try GenericParam.equalRange(in: metadata, tag: .typeDef, index: self.rowIndex)
+            try GenericParam.equalRange(in: file, tag: .typeDef, index: self.rowIndex)
                 .map { index in
-                    try GenericParam(in: metadata, at: index)
+                    try GenericParam(in: file, at: index)
                 }
         }
     }
     
     var interfaceImpls: [InterfaceImpl] {
         get throws {
-            try InterfaceImpl.equalRange(in: metadata, index: self.rowIndex)
+            try InterfaceImpl.equalRange(in: file, index: self.rowIndex)
                 .map { index in
-                    try InterfaceImpl(in: metadata, at: index)
+                    try InterfaceImpl(in: file, at: index)
                 }
         }
     }
     
     var classLayout: ClassLayout? {
         get throws {
-            try ClassLayout.equalRange(in: metadata, index: self.rowIndex)
+            try ClassLayout.equalRange(in: file, index: self.rowIndex)
                 .first
                 .map { index in
-                    try ClassLayout(in: metadata, at: index)
+                    try ClassLayout(in: file, at: index)
                 }
         }
     }
@@ -104,17 +104,17 @@ struct TypeDef {
     var customAttributes: [CustomAttribute] {
         get throws {
             try CustomAttribute.equalRange(
-                in: metadata,
+                in: file,
                 tag: .typeDef,
                 index: self.rowIndex
             ).map { index in
-                try CustomAttribute(in: metadata, at: index)
+                try CustomAttribute(in: file, at: index)
             }
         }
     }
     
-    private init(in metadata: MetadataDB, parsing span: inout ParserSpan, _ rowIndex: Index) throws {
-        self.metadata = metadata
+    private init(in file: MetadataFile, parsing span: inout ParserSpan, _ rowIndex: Index) throws {
+        self.file = file
         self.rowIndex = rowIndex
         
         guard let flags = TypeAttributes(rawValue: try UInt32(parsingLittleEndian: &span)) else {
@@ -122,19 +122,19 @@ struct TypeDef {
         }
         self.flags = flags
         
-        self.typeNameIndex = try HeapIndex(parsing: &span, size: metadata.heapSizes.stringSize)
-        self.typeNamespaceIndex = try HeapIndex(parsing: &span, size: metadata.heapSizes.stringSize)
+        self.typeNameIndex = try HeapIndex(parsing: &span, size: file.heapSizes.stringSize)
+        self.typeNamespaceIndex = try HeapIndex(parsing: &span, size: file.heapSizes.stringSize)
         
-        self.extendsIndex = try CodedIndex<TypeDefOrRef.Tag>(parsing: &span, size: metadata.codedIndexSizes.typeDefOrRef)
+        self.extendsIndex = try CodedIndex<TypeDefOrRef.Tag>(parsing: &span, size: file.codedIndexSizes.typeDefOrRef)
         
-        self.fieldListIndex = try Index(parsing: &span, size: metadata.indexSizes.field)
+        self.fieldListIndex = try Index(parsing: &span, size: file.indexSizes.field)
         
-        self.methodListIndex = try Index(parsing: &span, size: metadata.indexSizes.methodDef)
+        self.methodListIndex = try Index(parsing: &span, size: file.indexSizes.methodDef)
     }
     
-    init(in metadata: MetadataDB, at rowIndex: Index) throws {
-        self = try metadata.withRowSpan(in: .typeDef, at: rowIndex) { span in
-            try Self(in: metadata, parsing: &span, rowIndex)
+    init(in file: MetadataFile, at rowIndex: Index) throws {
+        self = try file.withRowSpan(in: .typeDef, at: rowIndex) { span in
+            try Self(in: file, parsing: &span, rowIndex)
         }
     }
 }

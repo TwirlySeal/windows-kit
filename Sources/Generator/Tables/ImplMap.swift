@@ -7,7 +7,7 @@ enum ImplMapError: Error {
 }
 
 struct ImplMap {
-    private let metadata: MetadataDB
+    private let file: MetadataFile
     
     let mappingFlags: PInvokeAttributes
     private let memberForwardedIndex: CodedIndex<MemberForwarded.Tag>
@@ -15,19 +15,19 @@ struct ImplMap {
     private let importScopeIndex: Index
     
     var memberForwarded: MemberForwarded {
-        get throws { try .init(in: metadata, at: memberForwardedIndex) }
+        get throws { try .init(in: file, at: memberForwardedIndex) }
     }
     
     var importName: String {
-        get throws { try metadata.string(at: importNameIndex) }
+        get throws { try file.string(at: importNameIndex) }
     }
     
     var importScope: ModuleRef {
-        get throws { try .init(in: metadata, at: importScopeIndex) }
+        get throws { try .init(in: file, at: importScopeIndex) }
     }
     
     static func equalRange(
-        in metadata: MetadataDB,
+        in metadata: MetadataFile,
         tag: MemberForwarded.Tag,
         index: Index
     ) throws -> Range<Index> {
@@ -40,8 +40,8 @@ struct ImplMap {
         }
     }
     
-    private init(in metadata: MetadataDB, parsing span: inout ParserSpan) throws {
-        self.metadata = metadata
+    private init(in file: MetadataFile, parsing span: inout ParserSpan) throws {
+        self.file = file
         
         guard let mappingFlags = PInvokeAttributes(
             rawValue: try UInt16(parsingLittleEndian: &span)
@@ -52,23 +52,23 @@ struct ImplMap {
         
         guard let memberForwardedIndex = try CodedIndex<MemberForwarded.Tag>(
             parsing: &span,
-            size: metadata.codedIndexSizes.memberForwarded
+            size: file.codedIndexSizes.memberForwarded
         ) else {
             throw ImplMapError.missingMemberForwarded
         }
         self.memberForwardedIndex = memberForwardedIndex
         
-        self.importNameIndex = try HeapIndex(parsing: &span, size: metadata.heapSizes.stringSize)
+        self.importNameIndex = try HeapIndex(parsing: &span, size: file.heapSizes.stringSize)
         
-        guard let importScopeIndex = try Index(parsing: &span, size: metadata.indexSizes.moduleRef) else {
+        guard let importScopeIndex = try Index(parsing: &span, size: file.indexSizes.moduleRef) else {
             throw ImplMapError.missingImportScope
         }
         self.importScopeIndex = importScopeIndex
     }
     
-    init(in metadata: MetadataDB, at rowIndex: Index) throws {
-        self = try metadata.withRowSpan(in: .implMap, at: rowIndex) { span in
-            try Self(in: metadata, parsing: &span)
+    init(in file: MetadataFile, at rowIndex: Index) throws {
+        self = try file.withRowSpan(in: .implMap, at: rowIndex) { span in
+            try Self(in: file, parsing: &span)
         }
     }
 }

@@ -30,7 +30,7 @@ struct CodedIndex<Tag: CodedIndexTag> {
         let mask: RawValue = (1 << Tag.bits) - 1
         let tagBits = rawValue & mask
         guard let tag = Tag.init(rawValue: tagBits) else {
-            throw MetadataError.invalidCodedIndexTag
+            throw MetadataFileError.invalidCodedIndexTag
         }
         
         guard let index = Index(rawValue: rawValue >> Tag.bits) else {

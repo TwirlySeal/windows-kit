@@ -9,51 +9,51 @@ enum HasCustomAttribute {
     case typeSpec(TypeSpec)
     case genericParam(GenericParam)
     
-    init(in metadata: MetadataDB, at index: CodedIndex<Tag>) throws {
+    init(in file: MetadataFile, at index: CodedIndex<Tag>) throws {
         switch index.tag {
         case .methodDef:
             self = .methodDef(
-                try MethodDef(in: metadata, at: index.index)
+                try MethodDef(in: file, at: index.index)
             )
             
         case .field:
             self = .field(
-                try Field(in: metadata, at: index.index)
+                try Field(in: file, at: index.index)
             )
         
         case .typeRef:
             self = .typeRef(
-                try TypeRef(in: metadata, at: index.index)
+                try TypeRef(in: file, at: index.index)
             )
             
         case .typeDef:
             self = .typeDef(
-                try TypeDef(in: metadata, at: index.index)
+                try TypeDef(in: file, at: index.index)
             )
             
         case .param:
             self = .param(
-                try Param(in: metadata, at: index.index)
+                try Param(in: file, at: index.index)
             )
             
         case .interfaceImpl:
             self = .interfaceImpl(
-                try InterfaceImpl(in: metadata, at: index.index)
+                try InterfaceImpl(in: file, at: index.index)
             )
             
         case .memberRef:
             self = .memberRef(
-                try MemberRef(in: metadata, at: index.index)
+                try MemberRef(in: file, at: index.index)
             )
         
         case .typeSpec:
             self = .typeSpec(
-                try TypeSpec(in: metadata, at: index.index)
+                try TypeSpec(in: file, at: index.index)
             )
             
         case .genericParam:
             self = .genericParam(
-                try GenericParam(in: metadata, at: index.index)
+                try GenericParam(in: file, at: index.index)
             )
         }
     }

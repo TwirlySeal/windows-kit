@@ -2,7 +2,7 @@ import Foundation
 import BinaryParsing
 import Algorithms
 
-enum MetadataError: Error {
+enum MetadataFileError: Error {
     case missingMetadataStream
     case unknownTable
     case missingStringStream
@@ -28,13 +28,11 @@ struct HeapIndex {
 }
 
 /// Manages the binary data of a metadata file and information needed to parse
-/// table rows. Lightweight view structs representing table rows are parsed on
-/// demand, and hold a reference to this class for indices into other tables.
-/// This allows them to make the index private and provide computed properties
-/// that parse the linked table row when it is accessed.
-///
-/// View structs go in the Tables folder
-final class MetadataDB {
+/// its contents. Data is parsed into lightweight view structs that hold a
+/// reference to this class to lazily parse linked data. These structs keep
+/// indices and the file reference private, and provide computed properties
+/// that parse linked data when accessed.
+final class MetadataFile {
     private let data: Data
     
     // Metadata stream
@@ -68,11 +66,11 @@ final class MetadataDB {
     func withRowSpan<T>(in tableID: TableID, at rowIndex: Index, _ body: (inout ParserSpan) throws -> T) throws -> T {
         try data.withParserSpan { span in
             guard let table = tables[tableID.rawValue] else {
-                throw MetadataError.missingTable
+                throw MetadataFileError.missingTable
             }
             let zeroBasedIndex = Int(rowIndex.rawValue) - 1
             guard zeroBasedIndex >= 0, zeroBasedIndex < table.rowCount else {
-                throw MetadataError.indexOutOfBounds
+                throw MetadataFileError.indexOutOfBounds
             }
             try span.seek(toRange: table.range)
             
@@ -94,7 +92,7 @@ final class MetadataDB {
     ) throws -> Range<Index> {
         guard let currentTable = tables[currentTable.rawValue],
               let linkedTable = tables[linkedTable.rawValue] else {
-            throw MetadataError.missingTable
+            throw MetadataFileError.missingTable
         }
         
         // Scan forward to find next non-null boundary
@@ -123,7 +121,7 @@ final class MetadataDB {
     /// Used for reverse lookups of rows in other tables that link to a given row
     func equalRange(in tableID: TableID, _ compare: (_ rowIndex: Index) throws -> Ordering) throws -> Range<Index> {
         guard let table = tables[tableID.rawValue] else {
-            throw MetadataError.missingTable
+            throw MetadataFileError.missingTable
         }
         
         // Binary search
@@ -239,7 +237,7 @@ final class MetadataDB {
     func withBlobSpan<T>(at offset: HeapIndex, _ body: (inout ParserSpan) throws -> T) throws -> T {
         try data.withParserSpan { span in
             guard let blobHeap else {
-                throw MetadataError.missingBlobHeap
+                throw MetadataFileError.missingBlobHeap
             }
             try span.seek(toRange: blobHeap)
             try span.seek(toRelativeOffset: offset.rawValue)
@@ -273,7 +271,7 @@ final class MetadataDB {
             return ((firstByte & 0b0001_1111) << 24) | remainingBytes
             
         } else {
-            throw MetadataError.invalidCompressedInteger
+            throw MetadataFileError.invalidCompressedInteger
         }
     }
     
@@ -284,7 +282,7 @@ final class MetadataDB {
         let streams = try Self.getStreams(&span)
 
         guard let metadataStream = streams["#~"] else {
-            throw MetadataError.missingMetadataStream
+            throw MetadataFileError.missingMetadataStream
         }
         try span.seek(toAbsoluteOffset: metadataStream.offset)
 
@@ -316,7 +314,7 @@ final class MetadataDB {
             guard rowCount > 0 else { continue }
 
             guard let kind = TableID(rawValue: i) else {
-                throw MetadataError.unknownTable
+                throw MetadataFileError.unknownTable
             }
 
             let stride = kind.stride(heapSizes, indexSizes, codedIndexSizes)
@@ -335,7 +333,7 @@ final class MetadataDB {
 
         // Heaps
         guard let stringStream = streams["#Strings"] else {
-            throw MetadataError.missingStringStream
+            throw MetadataFileError.missingStringStream
         }
         try span.seek(toAbsoluteOffset: stringStream.offset)
         self.stringHeap = try span.sliceRange(byteCount: stringStream.size)
@@ -391,7 +389,7 @@ final class MetadataDB {
     /// They only contain metadata and no executable code
     ///
     /// Relevant ECMA-335 sections:
-    /// - II.25 File format extensions to PE
+    /// - §II.25 File format extensions to PE
     ///
     /// Also useful: https://learn.microsoft.com/en-us/windows/win32/debug/pe-format
     private static func getStreams(_ input: inout ParserSpan) throws -> [String: StreamInfo] {
@@ -403,7 +401,7 @@ final class MetadataDB {
     
         let peSignature = try UInt32(parsingLittleEndian: &input)
         guard peSignature == 0x00004550 else { // PE\0\0
-            throw MetadataError.invalidPESignature
+            throw MetadataFileError.invalidPESignature
         }
 
         // PE File Header/COFF File Header
@@ -469,13 +467,13 @@ final class MetadataDB {
 
             // `partitioningIndex()` returns the count if the item is not found
             guard index < sections.count else {
-                throw MetadataError.invalidRVA
+                throw MetadataFileError.invalidRVA
             }
 
             let section = sections[index]
 
             guard section.virtualAddress <= rva else {
-                throw MetadataError.invalidRVA
+                throw MetadataFileError.invalidRVA
             }
 
             return section.pointerToRawData + (rva - section.virtualAddress)
@@ -488,7 +486,7 @@ final class MetadataDB {
 
         let metadataSignature = try UInt32(parsingLittleEndian: &input)
         guard metadataSignature == 0x424A5342 else {
-            throw MetadataError.invalidMetadataSignature
+            throw MetadataFileError.invalidMetadataSignature
         }
         // skip MajorVersion, MinorVersion, Reserved
         try input.seek(toRelativeOffset: 2+2+4)
@@ -504,7 +502,7 @@ final class MetadataDB {
             let stream = try Stream(parsing: &input, startOfMetadataRoot)
 
             guard streams[stream.name] == nil else {
-                throw MetadataError.duplicateStream(name: stream.name)
+                throw MetadataFileError.duplicateStream(name: stream.name)
             }
 
             streams[stream.name] = StreamInfo(
@@ -539,7 +537,7 @@ final class MetadataDB {
                 let searchRange = buffer.prefix(limit)
 
                 guard let nameLength = searchRange.firstIndex(of: 0) else {
-                    throw MetadataError.missingNullTerminator
+                    throw MetadataFileError.missingNullTerminator
                 }
 
                 return (
@@ -552,7 +550,7 @@ final class MetadataDB {
             }
             try input.seek(toRelativeOffset: paddedLength)
             guard let name else {
-                throw MetadataError.invalidStreamName
+                throw MetadataFileError.invalidStreamName
             }
             self.name = name
         }

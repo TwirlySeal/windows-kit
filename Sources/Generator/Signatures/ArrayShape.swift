@@ -11,19 +11,19 @@ struct ArrayShape {
     }
     
     init(parsing span: inout ParserSpan) throws {
-        self.rank = try MetadataDB.parseCompressedUnsignedInteger(from: &span)
+        self.rank = try MetadataFile.parseCompressedUnsignedInteger(from: &span)
         guard rank >= 1 else {
             throw ArrayShapeError.invalidRank
         }
         
-        let numSizes = try MetadataDB.parseCompressedUnsignedInteger(from: &span)
+        let numSizes = try MetadataFile.parseCompressedUnsignedInteger(from: &span)
         self.sizes = try [UInt32](count: Int(numSizes)) {
-            try MetadataDB.parseCompressedUnsignedInteger(from: &span)
+            try MetadataFile.parseCompressedUnsignedInteger(from: &span)
         }
         
-        let numLoBounds = try MetadataDB.parseCompressedUnsignedInteger(from: &span)
+        let numLoBounds = try MetadataFile.parseCompressedUnsignedInteger(from: &span)
         self.lowerBounds = try [UInt32](count: Int(numLoBounds)) {
-            try MetadataDB.parseCompressedUnsignedInteger(from: &span)
+            try MetadataFile.parseCompressedUnsignedInteger(from: &span)
         }
     }
 }

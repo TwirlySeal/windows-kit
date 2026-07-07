@@ -9,7 +9,7 @@ enum CustomAttribError: Error {
 struct CustomAttrib {
     let arguments: [Argument]
     
-    private init(in metadata: MetadataDB, parsing span: inout ParserSpan, _ params: [ParamToken]) throws {
+    private init(in file: MetadataFile, parsing span: inout ParserSpan, _ params: [ParamToken]) throws {
         guard try UInt16(parsingLittleEndian: &span) == 0x0001 else {
             throw CustomAttribError.invalidProlog
         }
@@ -24,7 +24,7 @@ struct CustomAttrib {
             arguments.append(
                 Argument(
                     name: "",
-                    value: try Value(in: metadata, parsing: &span, type: param.type)
+                    value: try Value(in: file, parsing: &span, type: param.type)
                 )
             )
         }
@@ -35,7 +35,7 @@ struct CustomAttrib {
             _ = try ArgumentKind(parsing: &span)
             let type = try Type(parsing: &span)
             let name = try serString(parsing: &span)
-            let value = try Value(in: metadata, parsing: &span, type: type)
+            let value = try Value(in: file, parsing: &span, type: type)
             
             arguments.append(
                 Argument(
@@ -48,9 +48,9 @@ struct CustomAttrib {
         self.arguments = arguments
     }
     
-    init(in metadata: MetadataDB, at offset: HeapIndex, params: [ParamToken]) throws {
-        self = try metadata.withBlobSpan(at: offset) { span in
-            try Self(in: metadata, parsing: &span, params)
+    init(in file: MetadataFile, at offset: HeapIndex, params: [ParamToken]) throws {
+        self = try file.withBlobSpan(at: offset) { span in
+            try Self(in: file, parsing: &span, params)
         }
     }
     
@@ -80,7 +80,7 @@ struct CustomAttrib {
         case type(name: String)
         case enumValue(name: String, value: Int32)
         
-        init(in metadata: MetadataDB, parsing span: inout ParserSpan, type: Type) throws {
+        init(in file: MetadataFile, parsing span: inout ParserSpan, type: Type) throws {
             switch type {
             case .boolean:
                 self = .boolean(try UInt8(parsing: &span) == 1)
@@ -119,7 +119,7 @@ struct CustomAttrib {
                 self = .string(try serString(parsing: &span))
                 
             case .class(let index):
-                let (namespace, name) = try Self.getName(metadata: metadata, index: index)
+                let (namespace, name) = try Self.getName(metadata: file, index: index)
                 
                 if namespace == "System" && name == "Type" {
                     self = .type(name: try serString(parsing: &span))
@@ -131,7 +131,7 @@ struct CustomAttrib {
                 }
                 
             case .valueType(let index):
-                let (namespace, name) = try Self.getName(metadata: metadata, index: index)
+                let (namespace, name) = try Self.getName(metadata: file, index: index)
                 self = .enumValue(
                     name: Self.getFullName(namespace, name),
                     value: try Int32(parsingLittleEndian: &span)
@@ -149,7 +149,7 @@ struct CustomAttrib {
         }
         
         static func getName(
-            metadata: MetadataDB,
+            metadata: MetadataFile,
             index: CodedIndex<TypeDefOrRef.Tag>
         ) throws -> (namespace: String, name: String) {
             let namespace: String
@@ -184,7 +184,7 @@ struct CustomAttrib {
 /// Parse a length-prefixed UTF-8 string
 func serString(parsing span: inout ParserSpan) throws -> String {
     // Null strings (with PackedLen = 0xFF) do not occur in Windows Metadata
-    let packedLen = try MetadataDB.parseCompressedUnsignedInteger(from: &span)
+    let packedLen = try MetadataFile.parseCompressedUnsignedInteger(from: &span)
     
     return try String(parsingUTF8: &span, count: Int(packedLen))
 }

@@ -9,11 +9,11 @@ enum MemberForwarded {
         case methodDef = 1
     }
     
-    init(in metadata: MetadataDB, at index: CodedIndex<Tag>) throws {
+    init(in file: MetadataFile, at index: CodedIndex<Tag>) throws {
         switch index.tag {
         case .methodDef:
             self = .methodDef(
-                try MethodDef(in: metadata, at: index.index)
+                try MethodDef(in: file, at: index.index)
             )
         }
     }

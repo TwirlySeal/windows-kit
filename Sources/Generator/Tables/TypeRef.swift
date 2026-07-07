@@ -1,7 +1,7 @@
 import BinaryParsing
 
 struct TypeRef {
-    private let metadata: MetadataDB
+    private let file: MetadataFile
     private let rowIndex: Index
     
     private let resolutionScopeIndex: CodedIndex<ResolutionScope.Tag>?
@@ -11,46 +11,46 @@ struct TypeRef {
     var resolutionScope: ResolutionScope? {
         get throws {
             try resolutionScopeIndex.map { index in
-                try ResolutionScope(in: metadata, at: index)
+                try ResolutionScope(in: file, at: index)
             }
         }
     }
     
     var name: String {
-        get throws { try metadata.string(at: typeNameIndex) }
+        get throws { try file.string(at: typeNameIndex) }
     }
     
     var namespace: String {
-        get throws { try metadata.string(at: typeNamespaceIndex) }
+        get throws { try file.string(at: typeNamespaceIndex) }
     }
     
     var customAttributes: [CustomAttribute] {
         get throws {
             try CustomAttribute.equalRange(
-                in: metadata,
+                in: file,
                 tag: .typeRef,
                 index: self.rowIndex
             ).map { index in
-                try CustomAttribute(in: metadata, at: index)
+                try CustomAttribute(in: file, at: index)
             }
         }
     }
     
-    private init(in metadata: MetadataDB, parsing span: inout ParserSpan, _ rowIndex: Index) throws {
-        self.metadata = metadata
+    private init(in file: MetadataFile, parsing span: inout ParserSpan, _ rowIndex: Index) throws {
+        self.file = file
         self.rowIndex = rowIndex
         
         self.resolutionScopeIndex = try CodedIndex<ResolutionScope.Tag>(
             parsing: &span,
-            size: metadata.codedIndexSizes.resolutionScope
+            size: file.codedIndexSizes.resolutionScope
         )
-        self.typeNameIndex = try HeapIndex(parsing: &span, size: metadata.heapSizes.stringSize)
-        self.typeNamespaceIndex = try HeapIndex(parsing: &span, size: metadata.heapSizes.stringSize)
+        self.typeNameIndex = try HeapIndex(parsing: &span, size: file.heapSizes.stringSize)
+        self.typeNamespaceIndex = try HeapIndex(parsing: &span, size: file.heapSizes.stringSize)
     }
     
-    init(in metadata: MetadataDB, at rowIndex: Index) throws {
-        self = try metadata.withRowSpan(in: .typeRef, at: rowIndex) { span in
-            try Self(in: metadata, parsing: &span, rowIndex)
+    init(in file: MetadataFile, at rowIndex: Index) throws {
+        self = try file.withRowSpan(in: .typeRef, at: rowIndex) { span in
+            try Self(in: file, parsing: &span, rowIndex)
         }
     }
 }

@@ -55,13 +55,13 @@ enum Type {
                 throw TypeError.invalidGenericInst
             }
             
-            let rawValue = try MetadataDB.parseCompressedUnsignedInteger(from: &span)
+            let rawValue = try MetadataFile.parseCompressedUnsignedInteger(from: &span)
             guard let typeIndex = try CodedIndex<TypeDefOrRef.Tag>(rawValue: rawValue) else {
                 throw TypeError.nullTypeIndex
             }
             self.typeIndex = typeIndex
             
-            let genArgCount = try MetadataDB.parseCompressedUnsignedInteger(from: &span)
+            let genArgCount = try MetadataFile.parseCompressedUnsignedInteger(from: &span)
             self.typeArgs = try [Type](count: Int(genArgCount)) {
                 try Type(parsing: &span)
             }
@@ -140,7 +140,7 @@ enum Type {
             self = .array(element: type, shape: shape)
             
         case ElementType.class:
-            let rawValue = try MetadataDB.parseCompressedUnsignedInteger(from: &span)
+            let rawValue = try MetadataFile.parseCompressedUnsignedInteger(from: &span)
             guard let type = try CodedIndex<TypeDefOrRef.Tag>(rawValue: rawValue) else {
                 throw TypeError.nullTypeIndex
             }
@@ -164,14 +164,14 @@ enum Type {
             self = .vector(modifiers: customMods, element: type)
             
         case ElementType.valueType:
-            let rawValue = try MetadataDB.parseCompressedUnsignedInteger(from: &span)
+            let rawValue = try MetadataFile.parseCompressedUnsignedInteger(from: &span)
             guard let type = try CodedIndex<TypeDefOrRef.Tag>(rawValue: rawValue) else {
                 throw TypeError.nullTypeIndex
             }
             self = .valueType(typeIndex: type)
             
         case ElementType.var:
-            let number = try MetadataDB.parseCompressedUnsignedInteger(from: &span)
+            let number = try MetadataFile.parseCompressedUnsignedInteger(from: &span)
             self = .genericTypeParameter(index: number)
             
         case ElementType.enum:
@@ -185,8 +185,8 @@ enum Type {
         }
     }
     
-    init(in metadata: MetadataDB, at offset: HeapIndex) throws {
-        self = try metadata.withBlobSpan(at: offset) { span in
+    init(in file: MetadataFile, at offset: HeapIndex) throws {
+        self = try file.withBlobSpan(at: offset) { span in
             try Self(parsing: &span)
         }
     }

@@ -42,7 +42,7 @@ enum TableID: Int {
 	case typeRef = 0x01
 	case typeSpec = 0x1B
 
-    func stride(_ heapSizes: MetadataDB.HeapSizes, _ indexSizes: IndexSizes, _ codedIndexSizes: CodedIndexSizes) -> Int {
+    func stride(_ heapSizes: MetadataFile.HeapSizes, _ indexSizes: IndexSizes, _ codedIndexSizes: CodedIndexSizes) -> Int {
 		// Where the field name is not specified, it is the same as the table or coded index tag
 		return switch self {
 			case .assembly:

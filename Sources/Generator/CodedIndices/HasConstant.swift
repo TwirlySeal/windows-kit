@@ -10,11 +10,11 @@ enum HasConstant {
 //        case property = 2
     }
     
-    init(in metadata: MetadataDB, at index: CodedIndex<Tag>) throws {
+    init(in file: MetadataFile, at index: CodedIndex<Tag>) throws {
         switch index.tag {
         case .field:
             self = .field(
-                try Field(in: metadata, at: index.index)
+                try Field(in: file, at: index.index)
             )
         }
     }

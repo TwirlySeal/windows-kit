@@ -6,7 +6,7 @@ enum GenericParamError: Error {
 }
 
 struct GenericParam {
-    private let metadata: MetadataDB
+    private let file: MetadataFile
     private let rowIndex: Index
     
     let number: UInt16
@@ -16,30 +16,30 @@ struct GenericParam {
     
     var owner: TypeOrMethodDef {
         get throws {
-            try .init(in: metadata, at: ownerIndex)
+            try .init(in: file, at: ownerIndex)
         }
     }
     
     var name: String {
         get throws {
-            try metadata.string(at: nameIndex)
+            try file.string(at: nameIndex)
         }
     }
     
     var customAttributes: [CustomAttribute] {
         get throws {
             try CustomAttribute.equalRange(
-                in: metadata,
+                in: file,
                 tag: .genericParam,
                 index: self.rowIndex
             ).map { index in
-                try CustomAttribute(in: metadata, at: index)
+                try CustomAttribute(in: file, at: index)
             }
         }
     }
     
     static func equalRange(
-        in metadata: MetadataDB,
+        in metadata: MetadataFile,
         tag: TypeOrMethodDef.Tag,
         index: Index
     ) throws -> Range<Index> {
@@ -52,8 +52,8 @@ struct GenericParam {
         }
     }
     
-    private init(in metadata: MetadataDB, parsing span: inout ParserSpan, _ rowIndex: Index) throws {
-        self.metadata = metadata
+    private init(in file: MetadataFile, parsing span: inout ParserSpan, _ rowIndex: Index) throws {
+        self.file = file
         self.rowIndex = rowIndex
         
         self.number = try UInt16(parsingLittleEndian: &span)
@@ -65,18 +65,18 @@ struct GenericParam {
         
         guard let ownerIndex = try CodedIndex<TypeOrMethodDef.Tag>(
             parsing: &span,
-            size: metadata.codedIndexSizes.typeOrMethodDef
+            size: file.codedIndexSizes.typeOrMethodDef
         ) else {
             throw GenericParamError.missingOwner
         }
         self.ownerIndex = ownerIndex
         
-        self.nameIndex = try HeapIndex(parsing: &span, size: metadata.heapSizes.stringSize)
+        self.nameIndex = try HeapIndex(parsing: &span, size: file.heapSizes.stringSize)
     }
     
-    init(in metadata: MetadataDB, at rowIndex: Index) throws {
-        self = try metadata.withRowSpan(in: .genericParam, at: rowIndex) { span in
-            try Self(in: metadata, parsing: &span, rowIndex)
+    init(in file: MetadataFile, at rowIndex: Index) throws {
+        self = try file.withRowSpan(in: .genericParam, at: rowIndex) { span in
+            try Self(in: file, parsing: &span, rowIndex)
         }
     }
 }

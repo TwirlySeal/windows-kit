@@ -42,7 +42,7 @@ struct MethodDefSig {
     private init(parsing span: inout ParserSpan) throws {
         self.header = try Header(parsing: &span)
         
-        let paramCount = try MetadataDB.parseCompressedUnsignedInteger(from: &span)
+        let paramCount = try MetadataFile.parseCompressedUnsignedInteger(from: &span)
         self.returnType = try RetType(parsing: &span)
         
         self.params = try [ParamToken](count: Int(paramCount)) {
@@ -50,8 +50,8 @@ struct MethodDefSig {
         }
     }
     
-    init(in metadata: MetadataDB, at offset: HeapIndex) throws {
-        self = try metadata.withBlobSpan(at: offset) { span in
+    init(in file: MetadataFile, at offset: HeapIndex) throws {
+        self = try file.withBlobSpan(at: offset) { span in
             try Self(parsing: &span)
         }
     }

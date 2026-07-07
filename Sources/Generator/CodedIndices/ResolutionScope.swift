@@ -12,15 +12,15 @@ enum ResolutionScope {
         case typeRef = 3
     }
     
-    init(in metadata: MetadataDB, at index: CodedIndex<Tag>) throws {
+    init(in file: MetadataFile, at index: CodedIndex<Tag>) throws {
         switch index.tag {
         case .typeRef:
             self = .typeRef(
-                try TypeRef(in: metadata, at: index.index)
+                try TypeRef(in: file, at: index.index)
             )
         case .moduleRef:
             self = .moduleRef(
-                try ModuleRef(in: metadata, at: index.index)
+                try ModuleRef(in: file, at: index.index)
             )
         }
     }

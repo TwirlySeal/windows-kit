@@ -8,7 +8,7 @@ enum CustomAttributeError: Error {
 }
 
 struct CustomAttribute {
-    private let metadata: MetadataDB
+    private let file: MetadataFile
     
     private let parentIndex: CodedIndex<HasCustomAttribute.Tag>
     private let typeIndex: CodedIndex<CustomAttributeType.Tag>
@@ -16,13 +16,13 @@ struct CustomAttribute {
     
     var parent: HasCustomAttribute {
         get throws {
-            try .init(in: metadata, at: parentIndex)
+            try .init(in: file, at: parentIndex)
         }
     }
     
     var type: CustomAttributeType {
         get throws {
-            try .init(in: metadata, at: typeIndex)
+            try .init(in: file, at: typeIndex)
         }
     }
     
@@ -42,12 +42,12 @@ struct CustomAttribute {
                 throw CustomAttributeError.nonVoidReturnType
             }
             
-            return try .init(in: metadata, at: valueIndex, params: methodDefSig.params)
+            return try .init(in: file, at: valueIndex, params: methodDefSig.params)
         }
     }
     
     static func equalRange(
-        in metadata: MetadataDB,
+        in metadata: MetadataFile,
         tag: HasCustomAttribute.Tag,
         index: Index
     ) throws -> Range<Index> {
@@ -60,12 +60,12 @@ struct CustomAttribute {
         }
     }
     
-    private init(in metadata: MetadataDB, parsing span: inout ParserSpan) throws {
-        self.metadata = metadata
+    private init(in file: MetadataFile, parsing span: inout ParserSpan) throws {
+        self.file = file
         
         guard let parentIndex = try CodedIndex<HasCustomAttribute.Tag>(
             parsing: &span,
-            size: metadata.codedIndexSizes.hasCustomAttribute
+            size: file.codedIndexSizes.hasCustomAttribute
         ) else {
             throw CustomAttributeError.missingParent
         }
@@ -73,18 +73,18 @@ struct CustomAttribute {
         
         guard let typeIndex = try CodedIndex<CustomAttributeType.Tag>(
             parsing: &span,
-            size: metadata.codedIndexSizes.customAttributeType
+            size: file.codedIndexSizes.customAttributeType
         ) else {
             throw CustomAttributeError.missingType
         }
         self.typeIndex = typeIndex
         
-        self.valueIndex = try HeapIndex(parsing: &span, size: metadata.heapSizes.blobSize)
+        self.valueIndex = try HeapIndex(parsing: &span, size: file.heapSizes.blobSize)
     }
     
-    init(in metadata: MetadataDB, at rowIndex: Index) throws {
-        self = try metadata.withRowSpan(in: .customAttribute, at: rowIndex) { span in
-            try Self(in: metadata, parsing: &span)
+    init(in file: MetadataFile, at rowIndex: Index) throws {
+        self = try file.withRowSpan(in: .customAttribute, at: rowIndex) { span in
+            try Self(in: file, parsing: &span)
         }
     }
 }

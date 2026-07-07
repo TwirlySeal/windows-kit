@@ -6,7 +6,7 @@ enum ConstantError: Error {
 }
 
 struct Constant {
-    private let metadata: MetadataDB
+    private let file: MetadataFile
     
     let type: ConstantType
     private let parentIndex: CodedIndex<HasConstant.Tag>
@@ -41,12 +41,12 @@ struct Constant {
     }
     
     var parent: HasConstant {
-        get throws { try .init(in: metadata, at: parentIndex) }
+        get throws { try .init(in: file, at: parentIndex) }
     }
     
     var value: ConstantValue {
         get throws {
-            try metadata.withBlobSpan(at: valueIndex) { span in
+            try file.withBlobSpan(at: valueIndex) { span in
                 switch self.type {
                 case .int8:
                     .int8(try Int8(parsing: &span))
@@ -85,8 +85,8 @@ struct Constant {
         }
     }
     
-    private init(in metadata: MetadataDB, parsing span: inout ParserSpan) throws {
-        self.metadata = metadata
+    private init(in file: MetadataFile, parsing span: inout ParserSpan) throws {
+        self.file = file
         
         self.type = switch try UInt8(parsing: &span) {
         case ElementType.i1:
@@ -128,18 +128,18 @@ struct Constant {
         
         guard let parentIndex = try CodedIndex<HasConstant.Tag>(
             parsing: &span,
-            size: metadata.codedIndexSizes.hasConstant
+            size: file.codedIndexSizes.hasConstant
         ) else {
             throw ConstantError.missingParent
         }
         self.parentIndex = parentIndex
         
-        self.valueIndex = try HeapIndex(parsing: &span, size: metadata.heapSizes.blobSize)
+        self.valueIndex = try HeapIndex(parsing: &span, size: file.heapSizes.blobSize)
     }
     
-    init(in metadata: MetadataDB, at rowIndex: Index) throws {
-        self = try metadata.withRowSpan(in: .constant, at: rowIndex) { span in
-            try Self(in: metadata, parsing: &span)
+    init(in file: MetadataFile, at rowIndex: Index) throws {
+        self = try file.withRowSpan(in: .constant, at: rowIndex) { span in
+            try Self(in: file, parsing: &span)
         }
     }
 }
