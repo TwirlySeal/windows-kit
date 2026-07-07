@@ -155,7 +155,7 @@ struct CustomAttrib {
             let namespace: String
             let name: String
             
-            switch try TypeDefOrRef(metadata: metadata, index: index) {
+            switch try TypeDefOrRef(in: metadata, at: index) {
             case .typeDef(let typeDef):
                 namespace = try typeDef.namespace
                 name = try typeDef.name
