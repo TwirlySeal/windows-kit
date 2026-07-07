@@ -11,7 +11,7 @@ struct TypeRef {
     var resolutionScope: ResolutionScope? {
         get throws {
             try resolutionScopeIndex.map { index in
-                try ResolutionScope(metadata: metadata, index: index)
+                try ResolutionScope(in: metadata, at: index)
             }
         }
     }
@@ -31,12 +31,12 @@ struct TypeRef {
                 tag: .typeRef,
                 index: self.rowIndex
             ).map { index in
-                try CustomAttribute(metadata: metadata, rowIndex: index)
+                try CustomAttribute(in: metadata, at: index)
             }
         }
     }
     
-    private init(metadata: MetadataDB, parsing span: inout ParserSpan, _ rowIndex: Index) throws {
+    private init(in metadata: MetadataDB, parsing span: inout ParserSpan, _ rowIndex: Index) throws {
         self.metadata = metadata
         self.rowIndex = rowIndex
         
@@ -48,9 +48,9 @@ struct TypeRef {
         self.typeNamespaceIndex = try HeapIndex(parsing: &span, size: metadata.heapSizes.stringSize)
     }
     
-    init(metadata: MetadataDB, rowIndex: Index) throws {
-        self = try metadata.withRowSpan(in: .typeRef, rowIndex: rowIndex) { span in
-            try Self(metadata: metadata, parsing: &span, rowIndex)
+    init(in metadata: MetadataDB, at rowIndex: Index) throws {
+        self = try metadata.withRowSpan(in: .typeRef, at: rowIndex) { span in
+            try Self(in: metadata, parsing: &span, rowIndex)
         }
     }
 }

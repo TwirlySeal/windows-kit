@@ -65,7 +65,7 @@ final class MetadataDB {
     /// is equal to the stride of the table for safety.
     ///
     /// Tables are one-indexed, meaning `rowIndex: n` gives the nth row.
-    func withRowSpan<T>(in tableID: TableID, rowIndex: Index, _ body: (inout ParserSpan) throws -> T) throws -> T {
+    func withRowSpan<T>(in tableID: TableID, at rowIndex: Index, _ body: (inout ParserSpan) throws -> T) throws -> T {
         try data.withParserSpan { span in
             guard let table = tables[tableID.rawValue] else {
                 throw MetadataError.missingTable

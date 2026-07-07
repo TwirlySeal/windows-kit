@@ -16,7 +16,7 @@ struct GenericParam {
     
     var owner: TypeOrMethodDef {
         get throws {
-            try .init(metadata: metadata, index: ownerIndex)
+            try .init(in: metadata, at: ownerIndex)
         }
     }
     
@@ -33,7 +33,7 @@ struct GenericParam {
                 tag: .genericParam,
                 index: self.rowIndex
             ).map { index in
-                try CustomAttribute(metadata: metadata, rowIndex: index)
+                try CustomAttribute(in: metadata, at: index)
             }
         }
     }
@@ -46,13 +46,13 @@ struct GenericParam {
         let codedIndex = CodedIndex<TypeOrMethodDef.Tag>(tag: tag, index: index)
         
         return try metadata.equalRange(in: .genericParam) { rowIndex in
-            try GenericParam(metadata: metadata, rowIndex: rowIndex)
+            try GenericParam(in: metadata, at: rowIndex)
                 .ownerIndex
                 .compare(to: codedIndex)
         }
     }
     
-    private init(metadata: MetadataDB, span: inout ParserSpan, _ rowIndex: Index) throws {
+    private init(in metadata: MetadataDB, parsing span: inout ParserSpan, _ rowIndex: Index) throws {
         self.metadata = metadata
         self.rowIndex = rowIndex
         
@@ -74,9 +74,9 @@ struct GenericParam {
         self.nameIndex = try HeapIndex(parsing: &span, size: metadata.heapSizes.stringSize)
     }
     
-    init(metadata: MetadataDB, rowIndex: Index) throws {
-        self = try metadata.withRowSpan(in: .genericParam, rowIndex: rowIndex) { span in
-            try Self(metadata: metadata, span: &span, rowIndex)
+    init(in metadata: MetadataDB, at rowIndex: Index) throws {
+        self = try metadata.withRowSpan(in: .genericParam, at: rowIndex) { span in
+            try Self(in: metadata, parsing: &span, rowIndex)
         }
     }
 }

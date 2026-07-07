@@ -7,7 +7,7 @@ struct TypeSpec {
     private let signatureIndex: HeapIndex
     
     var type: Type {
-        get throws { try .init(metadata: metadata, at: signatureIndex) }
+        get throws { try .init(in: metadata, at: signatureIndex) }
     }
     
     var customAttributes: [CustomAttribute] {
@@ -17,21 +17,21 @@ struct TypeSpec {
                 tag: .typeSpec,
                 index: self.rowIndex
             ).map { index in
-                try CustomAttribute(metadata: metadata, rowIndex: index)
+                try CustomAttribute(in: metadata, at: index)
             }
         }
     }
     
-    private init(metadata: MetadataDB, span: inout ParserSpan, _ rowIndex: Index) throws {
+    private init(in metadata: MetadataDB, parsing span: inout ParserSpan, _ rowIndex: Index) throws {
         self.metadata = metadata
         self.rowIndex = rowIndex
         
         self.signatureIndex = try HeapIndex(parsing: &span, size: metadata.heapSizes.blobSize)
     }
     
-    init(metadata: MetadataDB, rowIndex: Index) throws {
-        self = try metadata.withRowSpan(in: .typeSpec, rowIndex: rowIndex) { span in
-            try Self(metadata: metadata, span: &span, rowIndex)
+    init(in metadata: MetadataDB, at rowIndex: Index) throws {
+        self = try metadata.withRowSpan(in: .typeSpec, at: rowIndex) { span in
+            try Self(in: metadata, parsing: &span, rowIndex)
         }
     }
 }

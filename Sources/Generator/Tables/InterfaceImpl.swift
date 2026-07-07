@@ -13,11 +13,11 @@ struct InterfaceImpl {
     private let interfaceIndex: CodedIndex<TypeDefOrRef.Tag>
     
     var `class`: TypeDef {
-        get throws { try TypeDef(metadata: metadata, rowIndex: classIndex) }
+        get throws { try TypeDef(in: metadata, at: classIndex) }
     }
     
     var interface: TypeDefOrRef {
-        get throws { try TypeDefOrRef(metadata: metadata, index: interfaceIndex) }
+        get throws { try TypeDefOrRef(in: metadata, at: interfaceIndex) }
     }
     
     var customAttributes: [CustomAttribute] {
@@ -27,7 +27,7 @@ struct InterfaceImpl {
                 tag: .interfaceImpl,
                 index: self.rowIndex
             ).map { index in
-                try CustomAttribute(metadata: metadata, rowIndex: index)
+                try CustomAttribute(in: metadata, at: index)
             }
         }
     }
@@ -37,13 +37,13 @@ struct InterfaceImpl {
         index: Index
     ) throws -> Range<Index> {
         try metadata.equalRange(in: .interfaceImpl) { rowIndex in
-            try InterfaceImpl(metadata: metadata, rowIndex: rowIndex)
+            try InterfaceImpl(in: metadata, at: rowIndex)
                 .classIndex
                 .compare(to: index)
         }
     }
     
-    private init(metadata: MetadataDB, parsing span: inout ParserSpan, _ rowIndex: Index) throws {
+    private init(in metadata: MetadataDB, parsing span: inout ParserSpan, _ rowIndex: Index) throws {
         self.metadata = metadata
         self.rowIndex = rowIndex
         
@@ -61,9 +61,9 @@ struct InterfaceImpl {
         self.interfaceIndex = interfaceIndex
     }
     
-    init(metadata: MetadataDB, rowIndex: Index) throws {
-        self = try metadata.withRowSpan(in: .interfaceImpl, rowIndex: rowIndex) { span in
-            try Self(metadata: metadata, parsing: &span, rowIndex)
+    init(in metadata: MetadataDB, at rowIndex: Index) throws {
+        self = try metadata.withRowSpan(in: .interfaceImpl, at: rowIndex) { span in
+            try Self(in: metadata, parsing: &span, rowIndex)
         }
     }
 }

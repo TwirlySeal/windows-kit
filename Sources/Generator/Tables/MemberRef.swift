@@ -14,7 +14,7 @@ struct MemberRef {
     
     var `class`: MemberRefParent {
         get throws {
-            try .init(metadata: metadata, index: classIndex)
+            try .init(in: metadata, at: classIndex)
         }
     }
     
@@ -24,7 +24,7 @@ struct MemberRef {
     
     var signature: MethodDefSig {
         get throws {
-            try .init(metadata: metadata, at: signatureIndex)
+            try .init(in: metadata, at: signatureIndex)
         }
     }
     
@@ -35,12 +35,12 @@ struct MemberRef {
                 tag: .memberRef,
                 index: self.rowIndex
             ).map { index in
-                try CustomAttribute(metadata: metadata, rowIndex: index)
+                try CustomAttribute(in: metadata, at: index)
             }
         }
     }
     
-    private init(metadata: MetadataDB, parsing span: inout ParserSpan, _ rowIndex: Index) throws {
+    private init(in metadata: MetadataDB, parsing span: inout ParserSpan, _ rowIndex: Index) throws {
         self.metadata = metadata
         self.rowIndex = rowIndex
         
@@ -56,9 +56,9 @@ struct MemberRef {
         self.signatureIndex = try HeapIndex(parsing: &span, size: metadata.heapSizes.blobSize)
     }
     
-    init(metadata: MetadataDB, rowIndex: Index) throws {
-        self = try metadata.withRowSpan(in: .memberRef, rowIndex: rowIndex) { span in
-            try Self(metadata: metadata, parsing: &span, rowIndex)
+    init(in metadata: MetadataDB, at rowIndex: Index) throws {
+        self = try metadata.withRowSpan(in: .memberRef, at: rowIndex) { span in
+            try Self(in: metadata, parsing: &span, rowIndex)
         }
     }
 }

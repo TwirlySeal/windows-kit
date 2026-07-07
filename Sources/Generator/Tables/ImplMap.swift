@@ -15,7 +15,7 @@ struct ImplMap {
     private let importScopeIndex: Index
     
     var memberForwarded: MemberForwarded {
-        get throws { try .init(metadata: metadata, index: memberForwardedIndex) }
+        get throws { try .init(in: metadata, at: memberForwardedIndex) }
     }
     
     var importName: String {
@@ -23,7 +23,7 @@ struct ImplMap {
     }
     
     var importScope: ModuleRef {
-        get throws { try .init(metadata: metadata, rowIndex: importScopeIndex) }
+        get throws { try .init(in: metadata, at: importScopeIndex) }
     }
     
     static func equalRange(
@@ -34,13 +34,13 @@ struct ImplMap {
         let codedIndex = CodedIndex<MemberForwarded.Tag>(tag: tag, index: index)
         
         return try metadata.equalRange(in: .implMap) { rowIndex in
-            try ImplMap(metadata: metadata, rowIndex: rowIndex)
+            try ImplMap(in: metadata, at: rowIndex)
                 .memberForwardedIndex
                 .compare(to: codedIndex)
         }
     }
     
-    private init(metadata: MetadataDB, span: inout ParserSpan) throws {
+    private init(in metadata: MetadataDB, parsing span: inout ParserSpan) throws {
         self.metadata = metadata
         
         guard let mappingFlags = PInvokeAttributes(
@@ -66,9 +66,9 @@ struct ImplMap {
         self.importScopeIndex = importScopeIndex
     }
     
-    init(metadata: MetadataDB, rowIndex: Index) throws {
-        self = try metadata.withRowSpan(in: .implMap, rowIndex: rowIndex) { span in
-            try Self(metadata: metadata, span: &span)
+    init(in metadata: MetadataDB, at rowIndex: Index) throws {
+        self = try metadata.withRowSpan(in: .implMap, at: rowIndex) { span in
+            try Self(in: metadata, parsing: &span)
         }
     }
 }

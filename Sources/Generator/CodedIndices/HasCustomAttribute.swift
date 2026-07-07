@@ -9,51 +9,51 @@ enum HasCustomAttribute {
     case typeSpec(TypeSpec)
     case genericParam(GenericParam)
     
-    init(metadata: MetadataDB, index: CodedIndex<Tag>) throws {
+    init(in metadata: MetadataDB, at index: CodedIndex<Tag>) throws {
         switch index.tag {
         case .methodDef:
             self = .methodDef(
-                try MethodDef(metadata: metadata, rowIndex: index.index)
+                try MethodDef(in: metadata, at: index.index)
             )
             
         case .field:
             self = .field(
-                try Field(metadata: metadata, rowIndex: index.index)
+                try Field(in: metadata, at: index.index)
             )
         
         case .typeRef:
             self = .typeRef(
-                try TypeRef(metadata: metadata, rowIndex: index.index)
+                try TypeRef(in: metadata, at: index.index)
             )
             
         case .typeDef:
             self = .typeDef(
-                try TypeDef(metadata: metadata, rowIndex: index.index)
+                try TypeDef(in: metadata, at: index.index)
             )
             
         case .param:
             self = .param(
-                try Param(metadata: metadata, rowIndex: index.index)
+                try Param(in: metadata, at: index.index)
             )
             
         case .interfaceImpl:
             self = .interfaceImpl(
-                try InterfaceImpl(metadata: metadata, rowIndex: index.index)
+                try InterfaceImpl(in: metadata, at: index.index)
             )
             
         case .memberRef:
             self = .memberRef(
-                try MemberRef(metadata: metadata, rowIndex: index.index)
+                try MemberRef(in: metadata, at: index.index)
             )
         
         case .typeSpec:
             self = .typeSpec(
-                try TypeSpec(metadata: metadata, rowIndex: index.index)
+                try TypeSpec(in: metadata, at: index.index)
             )
             
         case .genericParam:
             self = .genericParam(
-                try GenericParam(metadata: metadata, rowIndex: index.index)
+                try GenericParam(in: metadata, at: index.index)
             )
         }
     }

@@ -9,7 +9,7 @@ struct FieldSig {
         self.type = try Type(parsing: &span)
     }
     
-    init(metadata: MetadataDB, at offset: HeapIndex) throws {
+    init(in metadata: MetadataDB, at offset: HeapIndex) throws {
         self = try metadata.withBlobSpan(at: offset) { span in
             try Self(parsing: &span)
         }

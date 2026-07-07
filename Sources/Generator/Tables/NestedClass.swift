@@ -12,14 +12,14 @@ struct NestedClass {
     private let enclosingClassIndex: Index
     
     var nestedClass: TypeDef {
-        get throws { try .init(metadata: metadata, rowIndex: nestedClassIndex) }
+        get throws { try .init(in: metadata, at: nestedClassIndex) }
     }
     
     var enclosingClass: TypeDef {
-        get throws { try .init(metadata: metadata, rowIndex: enclosingClassIndex) }
+        get throws { try .init(in: metadata, at: enclosingClassIndex) }
     }
     
-    private init(metadata: MetadataDB, span: inout ParserSpan) throws {
+    private init(in metadata: MetadataDB, parsing span: inout ParserSpan) throws {
         self.metadata = metadata
         
         guard let nestedClassIndex = try Index(parsing: &span, size: metadata.indexSizes.typeDef) else {
@@ -33,9 +33,9 @@ struct NestedClass {
         self.enclosingClassIndex = enclosingClassIndex
     }
     
-    init(metadata: MetadataDB, rowIndex: Index) throws {
-        self = try metadata.withRowSpan(in: .nestedClass, rowIndex: rowIndex) { span in
-            try Self(metadata: metadata, span: &span)
+    init(in metadata: MetadataDB, at rowIndex: Index) throws {
+        self = try metadata.withRowSpan(in: .nestedClass, at: rowIndex) { span in
+            try Self(in: metadata, parsing: &span)
         }
     }
 }

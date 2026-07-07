@@ -16,13 +16,13 @@ struct CustomAttribute {
     
     var parent: HasCustomAttribute {
         get throws {
-            try .init(metadata: metadata, index: parentIndex)
+            try .init(in: metadata, at: parentIndex)
         }
     }
     
     var type: CustomAttributeType {
         get throws {
-            try .init(metadata: metadata, index: typeIndex)
+            try .init(in: metadata, at: typeIndex)
         }
     }
     
@@ -42,7 +42,7 @@ struct CustomAttribute {
                 throw CustomAttributeError.nonVoidReturnType
             }
             
-            return try .init(metadata: metadata, at: valueIndex, params: methodDefSig.params)
+            return try .init(in: metadata, at: valueIndex, params: methodDefSig.params)
         }
     }
     
@@ -54,13 +54,13 @@ struct CustomAttribute {
         let codedIndex = CodedIndex<HasCustomAttribute.Tag>(tag: tag, index: index)
         
         return try metadata.equalRange(in: .customAttribute) { rowIndex in
-            try CustomAttribute(metadata: metadata, rowIndex: rowIndex)
+            try CustomAttribute(in: metadata, at: rowIndex)
                 .parentIndex
                 .compare(to: codedIndex)
         }
     }
     
-    private init(metadata: MetadataDB, parsing span: inout ParserSpan) throws {
+    private init(in metadata: MetadataDB, parsing span: inout ParserSpan) throws {
         self.metadata = metadata
         
         guard let parentIndex = try CodedIndex<HasCustomAttribute.Tag>(
@@ -82,9 +82,9 @@ struct CustomAttribute {
         self.valueIndex = try HeapIndex(parsing: &span, size: metadata.heapSizes.blobSize)
     }
     
-    init(metadata: MetadataDB, rowIndex: Index) throws {
-        self = try metadata.withRowSpan(in: .customAttribute, rowIndex: rowIndex) { span in
-            try Self(metadata: metadata, parsing: &span)
+    init(in metadata: MetadataDB, at rowIndex: Index) throws {
+        self = try metadata.withRowSpan(in: .customAttribute, at: rowIndex) { span in
+            try Self(in: metadata, parsing: &span)
         }
     }
 }

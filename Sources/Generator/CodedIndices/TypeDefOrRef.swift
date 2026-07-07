@@ -12,21 +12,21 @@ enum TypeDefOrRef {
         case typeSpec = 2
     }
     
-    init(metadata: MetadataDB, index: CodedIndex<Tag>) throws {
+    init(in metadata: MetadataDB, at index: CodedIndex<Tag>) throws {
         switch index.tag {
         case .typeDef:
             self = .typeDef(
-                try TypeDef(metadata: metadata, rowIndex: index.index)
+                try TypeDef(in: metadata, at: index.index)
             )
             
         case .typeRef:
             self = .typeRef(
-                try TypeRef(metadata: metadata, rowIndex: index.index)
+                try TypeRef(in: metadata, at: index.index)
             )
             
         case .typeSpec:
             self = .typeSpec(
-                try TypeSpec(metadata: metadata, rowIndex: index.index)
+                try TypeSpec(in: metadata, at: index.index)
             )
         }
     }

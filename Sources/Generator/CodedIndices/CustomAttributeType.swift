@@ -2,16 +2,16 @@ enum CustomAttributeType {
     case methodDef(MethodDef)
     case memberRef(MemberRef)
     
-    init(metadata: MetadataDB, index: CodedIndex<Tag>) throws {
+    init(in metadata: MetadataDB, at index: CodedIndex<Tag>) throws {
         switch index.tag {
         case .methodDef:
             self = .methodDef(
-                try MethodDef(metadata: metadata, rowIndex: index.index)
+                try MethodDef(in: metadata, at: index.index)
             )
             
         case .memberRef:
             self = .memberRef(
-                try MemberRef(metadata: metadata, rowIndex: index.index)
+                try MemberRef(in: metadata, at: index.index)
             )
         }
     }

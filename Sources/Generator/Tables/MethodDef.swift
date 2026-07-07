@@ -22,7 +22,7 @@ struct MethodDef {
     }
     
     var signature: MethodDefSig {
-        get throws { try .init(metadata: metadata, at: signatureIndex) }
+        get throws { try .init(in: metadata, at: signatureIndex) }
     }
     
     var params: [Param] {
@@ -33,11 +33,11 @@ struct MethodDef {
                 currentTable: .methodDef,
                 linkedTable: .param
             ) { rowIndex in
-                try Self(metadata: metadata, rowIndex: rowIndex).paramListIndex
+                try Self(in: metadata, at: rowIndex).paramListIndex
             }
             
             return try range.map { index in
-                try Param(metadata: metadata, rowIndex: index)
+                try Param(in: metadata, at: index)
             }
         }
     }
@@ -47,7 +47,7 @@ struct MethodDef {
             try ImplMap.equalRange(in: metadata, tag: .methodDef, index: self.rowIndex)
                 .first
                 .map { index in
-                    try ImplMap(metadata: metadata, rowIndex: index)
+                    try ImplMap(in: metadata, at: index)
                 }
         }
     }
@@ -59,12 +59,12 @@ struct MethodDef {
                 tag: .methodDef,
                 index: self.rowIndex
             ).map { index in
-                try CustomAttribute(metadata: metadata, rowIndex: index)
+                try CustomAttribute(in: metadata, at: index)
             }
         }
     }
     
-    private init(metadata: MetadataDB, parsing span: inout ParserSpan, _ rowIndex: Index) throws {
+    private init(in metadata: MetadataDB, parsing span: inout ParserSpan, _ rowIndex: Index) throws {
         self.metadata = metadata
         self.rowIndex = rowIndex
         self.rva = try UInt32(parsingLittleEndian: &span)
@@ -88,9 +88,9 @@ struct MethodDef {
         self.paramListIndex = paramListIndex
     }
     
-    init(metadata: MetadataDB, rowIndex: Index) throws {
-        self = try metadata.withRowSpan(in: .methodDef, rowIndex: rowIndex) { span in
-            try Self(metadata: metadata, parsing: &span, rowIndex)
+    init(in metadata: MetadataDB, at rowIndex: Index) throws {
+        self = try metadata.withRowSpan(in: .methodDef, at: rowIndex) { span in
+            try Self(in: metadata, parsing: &span, rowIndex)
         }
     }
 }

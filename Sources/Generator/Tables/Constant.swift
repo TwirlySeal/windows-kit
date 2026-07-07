@@ -41,7 +41,7 @@ struct Constant {
     }
     
     var parent: HasConstant {
-        get throws { try .init(metadata: metadata, index: parentIndex) }
+        get throws { try .init(in: metadata, at: parentIndex) }
     }
     
     var value: ConstantValue {
@@ -85,7 +85,7 @@ struct Constant {
         }
     }
     
-    private init(metadata: MetadataDB, parsing span: inout ParserSpan) throws {
+    private init(in metadata: MetadataDB, parsing span: inout ParserSpan) throws {
         self.metadata = metadata
         
         self.type = switch try UInt8(parsing: &span) {
@@ -137,9 +137,9 @@ struct Constant {
         self.valueIndex = try HeapIndex(parsing: &span, size: metadata.heapSizes.blobSize)
     }
     
-    init(metadata: MetadataDB, rowIndex: Index) throws {
-        self = try metadata.withRowSpan(in: .constant, rowIndex: rowIndex) { span in
-            try Self(metadata: metadata, parsing: &span)
+    init(in metadata: MetadataDB, at rowIndex: Index) throws {
+        self = try metadata.withRowSpan(in: .constant, at: rowIndex) { span in
+            try Self(in: metadata, parsing: &span)
         }
     }
 }

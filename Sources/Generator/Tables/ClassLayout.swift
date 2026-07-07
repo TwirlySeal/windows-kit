@@ -12,7 +12,7 @@ struct ClassLayout {
     private let parentIndex: Index
     
     var parent: TypeDef {
-        get throws { try .init(metadata: metadata, rowIndex: parentIndex) }
+        get throws { try .init(in: metadata, at: parentIndex) }
     }
     
     static func equalRange(
@@ -20,13 +20,13 @@ struct ClassLayout {
         index: Index
     ) throws -> Range<Index> {
         try metadata.equalRange(in: .classLayout) { rowIndex in
-            try ClassLayout(metadata: metadata, rowIndex: rowIndex)
+            try ClassLayout(in: metadata, at: rowIndex)
                 .parentIndex
                 .compare(to: index)
         }
     }
     
-    private init(metadata: MetadataDB, parsing span: inout ParserSpan) throws {
+    private init(in metadata: MetadataDB, parsing span: inout ParserSpan) throws {
         self.metadata = metadata
         self.packingSize = try UInt16(parsingLittleEndian: &span)
         self.classSize = try UInt32(parsingLittleEndian: &span)
@@ -37,9 +37,9 @@ struct ClassLayout {
         self.parentIndex = parentIndex
     }
     
-    init(metadata: MetadataDB, rowIndex: Index) throws {
-        self = try metadata.withRowSpan(in: .classLayout, rowIndex: rowIndex) { span in
-            try Self(metadata: metadata, parsing: &span)
+    init(in metadata: MetadataDB, at rowIndex: Index) throws {
+        self = try metadata.withRowSpan(in: .classLayout, at: rowIndex) { span in
+            try Self(in: metadata, parsing: &span)
         }
     }
 }

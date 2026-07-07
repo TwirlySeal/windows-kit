@@ -9,7 +9,7 @@ enum CustomAttribError: Error {
 struct CustomAttrib {
     let arguments: [Argument]
     
-    private init(metadata: MetadataDB, parsing span: inout ParserSpan, _ params: [ParamToken]) throws {
+    private init(in metadata: MetadataDB, parsing span: inout ParserSpan, _ params: [ParamToken]) throws {
         guard try UInt16(parsingLittleEndian: &span) == 0x0001 else {
             throw CustomAttribError.invalidProlog
         }
@@ -24,7 +24,7 @@ struct CustomAttrib {
             arguments.append(
                 Argument(
                     name: "",
-                    value: try Value(metadata: metadata, parsing: &span, type: param.type)
+                    value: try Value(in: metadata, parsing: &span, type: param.type)
                 )
             )
         }
@@ -35,7 +35,7 @@ struct CustomAttrib {
             _ = try ArgumentKind(parsing: &span)
             let type = try Type(parsing: &span)
             let name = try serString(parsing: &span)
-            let value = try Value(metadata: metadata, parsing: &span, type: type)
+            let value = try Value(in: metadata, parsing: &span, type: type)
             
             arguments.append(
                 Argument(
@@ -48,9 +48,9 @@ struct CustomAttrib {
         self.arguments = arguments
     }
     
-    init(metadata: MetadataDB, at offset: HeapIndex, params: [ParamToken]) throws {
+    init(in metadata: MetadataDB, at offset: HeapIndex, params: [ParamToken]) throws {
         self = try metadata.withBlobSpan(at: offset) { span in
-            try Self(metadata: metadata, parsing: &span, params)
+            try Self(in: metadata, parsing: &span, params)
         }
     }
     
@@ -80,7 +80,7 @@ struct CustomAttrib {
         case type(name: String)
         case enumValue(name: String, value: Int32)
         
-        init(metadata: MetadataDB, parsing span: inout ParserSpan, type: Type) throws {
+        init(in metadata: MetadataDB, parsing span: inout ParserSpan, type: Type) throws {
             switch type {
             case .boolean:
                 self = .boolean(try UInt8(parsing: &span) == 1)

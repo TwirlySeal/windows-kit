@@ -26,7 +26,7 @@ struct TypeDef {
     var extends: TypeDefOrRef? {
         get throws {
             try extendsIndex.map { index in
-                try .init(metadata: metadata, index: index)
+                try .init(in: metadata, at: index)
             }
         }
     }
@@ -43,11 +43,11 @@ struct TypeDef {
                 currentTable: .typeDef,
                 linkedTable: .field
             ) { rowIndex in
-                try Self(metadata: metadata, rowIndex: rowIndex).fieldListIndex
+                try Self(in: metadata, at: rowIndex).fieldListIndex
             }
             
             return try range.map { index in
-                try Field(metadata: metadata, rowIndex: index)
+                try Field(in: metadata, at: index)
             }
         }
     }
@@ -64,11 +64,11 @@ struct TypeDef {
                 currentTable: .typeDef,
                 linkedTable: .methodDef
             ) { rowIndex in
-                try Self(metadata: metadata, rowIndex: rowIndex).methodListIndex
+                try Self(in: metadata, at: rowIndex).methodListIndex
             }
             
             return try range.map { index in
-                try MethodDef(metadata: metadata, rowIndex: index)
+                try MethodDef(in: metadata, at: index)
             }
         }
     }
@@ -77,7 +77,7 @@ struct TypeDef {
         get throws {
             try GenericParam.equalRange(in: metadata, tag: .typeDef, index: self.rowIndex)
                 .map { index in
-                    try GenericParam(metadata: metadata, rowIndex: index)
+                    try GenericParam(in: metadata, at: index)
                 }
         }
     }
@@ -86,7 +86,7 @@ struct TypeDef {
         get throws {
             try InterfaceImpl.equalRange(in: metadata, index: self.rowIndex)
                 .map { index in
-                    try InterfaceImpl(metadata: metadata, rowIndex: index)
+                    try InterfaceImpl(in: metadata, at: index)
                 }
         }
     }
@@ -96,7 +96,7 @@ struct TypeDef {
             try ClassLayout.equalRange(in: metadata, index: self.rowIndex)
                 .first
                 .map { index in
-                    try ClassLayout(metadata: metadata, rowIndex: index)
+                    try ClassLayout(in: metadata, at: index)
                 }
         }
     }
@@ -108,12 +108,12 @@ struct TypeDef {
                 tag: .typeDef,
                 index: self.rowIndex
             ).map { index in
-                try CustomAttribute(metadata: metadata, rowIndex: index)
+                try CustomAttribute(in: metadata, at: index)
             }
         }
     }
     
-    private init(metadata: MetadataDB, span: inout ParserSpan, rowIndex: Index) throws {
+    private init(in metadata: MetadataDB, parsing span: inout ParserSpan, _ rowIndex: Index) throws {
         self.metadata = metadata
         self.rowIndex = rowIndex
         
@@ -132,9 +132,9 @@ struct TypeDef {
         self.methodListIndex = try Index(parsing: &span, size: metadata.indexSizes.methodDef)
     }
     
-    init(metadata: MetadataDB, rowIndex: Index) throws {
-        self = try metadata.withRowSpan(in: .typeDef, rowIndex: rowIndex) { span in
-            try Self(metadata: metadata, span: &span, rowIndex: rowIndex)
+    init(in metadata: MetadataDB, at rowIndex: Index) throws {
+        self = try metadata.withRowSpan(in: .typeDef, at: rowIndex) { span in
+            try Self(in: metadata, parsing: &span, rowIndex)
         }
     }
 }
