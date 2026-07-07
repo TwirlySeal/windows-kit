@@ -30,10 +30,15 @@ struct HeapIndex {
 /// Manages the binary data of a metadata file and information needed to parse
 /// its contents. Data is parsed into lightweight view structs that hold a
 /// reference to this class to lazily parse linked data. These structs keep
-/// indices and the file reference private, and provide computed properties
-/// that parse linked data when accessed.
+/// indices and the file reference private, and provide throwing computed
+/// properties that parse linked data when accessed.
 ///
-/// It is a class because its large size would make it expensive to copy and it
+/// Windows Metadata is like a graph of data linked via indices, so representing
+/// it using classes would create reference cycle challenges and require parsing
+/// all the data upfront which is inefficient. Parsing a view struct is cheap
+/// because none of its linked data is resolved until it is needed.
+///
+/// This is a class because its large size would make it expensive to copy and it
 /// is frequently passed around
 final class MetadataFile {
     private let data: Data
@@ -44,6 +49,12 @@ final class MetadataFile {
         let rowCount: UInt32
         let stride: Int
     }
+    /// Indexed by `TableID` raw values, matching bit sets such as Valid and Sorted
+    ///
+    /// The format stores table information like a structure of arrays, but it
+    /// has been transposed to an array of structures to align with the access
+    /// pattern of using multiple details about the table at once (ergonomics
+    /// and cache density)
     private let tables: [64 of Table?]
 
     // Info
@@ -62,10 +73,11 @@ final class MetadataFile {
         sorted & (1 << table.rawValue) != 0
     }
     
-    /// Provides temporary access to a span over the bytes in a table row. The size of the span
-    /// is equal to the stride of the table for safety.
+    /// Provides temporary access to a span over the bytes in a table row. The
+    /// size of the span is equal to the stride of the table for safety.
     ///
-    /// Tables are one-indexed, meaning `rowIndex: n` gives the nth row.
+    /// Tables are one-indexed, meaning an index of `n` gives the nth row. An
+    /// index of 0 is reserved to mean null (no index)
     func withRowSpan<T>(in tableID: TableID, at rowIndex: Index, _ body: (inout ParserSpan) throws -> T) throws -> T {
         try data.withParserSpan { span in
             guard let table = tables[tableID.rawValue] else {
@@ -252,10 +264,14 @@ final class MetadataFile {
         }
     }
     
+    /// Used in blobs and signatures
     /// Max value: 0x1FFFFFFF
     static func parseCompressedUnsignedInteger(from span: inout ParserSpan) throws -> UInt32 {
         // Compressed integers are stored in big endian
-        // This does not matter for single byte reads
+        //
+        // I'm not sure if big endian parsing involves byte-order swapping for
+        // single-byte reads on little endian systems, but I used little endian
+        // to avoid this overhead just in case it does
         let firstByte = try UInt32(parsingLittleEndian: &span, byteCount: 1)
         
         if firstByte >> 7 == 0b0 {
@@ -363,7 +379,8 @@ final class MetadataFile {
         }
     }
     
-    /// Index sizes for all heaps
+    /// The sizes of indices into each heap (the number of bytes that should be
+    /// read to parse a `HeapIndex`) depend on these bit flags
     struct HeapSizes: OptionSet {
         let rawValue: UInt8
 
@@ -388,13 +405,16 @@ final class MetadataFile {
         }
     }
 
-    /// WinMD files are .NET assemblies, which are stored in a subset of the Microsoft Portable Executable format
-    /// They only contain metadata and no executable code
+    /// WinMD files are .NET assemblies, which are stored in a subset of the
+    /// Microsoft Portable Executable format. They only contain metadata and no
+    /// executable code.
     ///
-    /// Relevant ECMA-335 sections:
-    /// - §II.25 File format extensions to PE
+    /// We need to follow this format until we reach the metadata root where the
+    /// Windows Metadata is actually stored.
     ///
-    /// Also useful: https://learn.microsoft.com/en-us/windows/win32/debug/pe-format
+    /// ### Resources:
+    /// - ECMA-335 - §II.25 File format extensions to PE
+    /// - https://learn.microsoft.com/en-us/windows/win32/debug/pe-format
     private static func getStreams(_ input: inout ParserSpan) throws -> [String: StreamInfo] {
         try #magicNumber("MZ", parsing: &input) // MS-DOS header
 
@@ -436,6 +456,16 @@ final class MetadataFile {
         return try parseMetadata(&input)
     }
 
+    /// Represents the PE Section Table, which serves as a map to translate
+    /// Relative Virtual Addresses (RVAs) into physical file offsets.
+    ///
+    /// - **File Offset:** The literal, byte-0-indexed position of data when the
+    /// binary sits on disk.
+    /// - **RVA:** When the Windows Loader maps a PE file from disk into RAM, it
+    /// pads the sections (like `.text` for code or `.data` for variables) with
+    /// zeros so that each section starts precisely on a memory page boundary.
+    /// An RVA represents the position of data after this padding has been
+    /// added.
     private struct SectionTable {
         struct Section {
             let virtualAddress: UInt32
@@ -462,10 +492,11 @@ final class MetadataFile {
             }
         }
 
+        /// Find the file offset that corresponds to a given RVA
         func fileOffset(rva: UInt32) throws -> UInt32 {
             // Find the first section where the RVA is less than the end of the section (binary search)
-            let index = sections.partitioningIndex {
-                rva < $0.virtualAddress + $0.virtualSize
+            let index = sections.partitioningIndex { section in
+                rva < section.virtualAddress + section.virtualSize
             }
 
             // `partitioningIndex()` returns the count if the item is not found
@@ -483,7 +514,7 @@ final class MetadataFile {
         }
     }
 
-    /// See ECMA-335 - II.24 Metadata physical layout
+    /// See ECMA-335 - §II.24 Metadata physical layout
     private static func parseMetadata(_ input: inout ParserSpan) throws -> [String: StreamInfo] {
         let startOfMetadataRoot = input.startPosition
 
@@ -545,10 +576,10 @@ final class MetadataFile {
 
                 return (
                     // String does not include null terminator
-                    String(bytes: searchRange.prefix(nameLength), encoding: .ascii),
+                    name: String(bytes: searchRange.prefix(nameLength), encoding: .ascii),
 
                     // Add one to include null terminator, then round to next multiple of 4
-                    (nameLength + 1 + 3) & ~3
+                    paddedLength: (nameLength + 1 + 3) & ~3
                 )
             }
             try input.seek(toRelativeOffset: paddedLength)
