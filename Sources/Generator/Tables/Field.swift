@@ -6,6 +6,8 @@ enum FieldError: Error {
 
 struct Field {
     private let metadata: MetadataDB
+    private let rowIndex: Index
+    
     let flags: FieldAttributes
     private let nameIndex: HeapIndex
     private let signatureIndex: HeapIndex
@@ -18,8 +20,22 @@ struct Field {
         get throws { try .init(metadata: metadata, at: signatureIndex) }
     }
     
-    private init(metadata: MetadataDB, span: inout ParserSpan) throws {
+    var customAttributes: [CustomAttribute] {
+        get throws {
+            try CustomAttribute.equalRange(
+                in: metadata,
+                tag: .field,
+                index: self.rowIndex
+            ).map { index in
+                try CustomAttribute(metadata: metadata, rowIndex: index)
+            }
+        }
+    }
+    
+    private init(metadata: MetadataDB, parsing span: inout ParserSpan, _ rowIndex: Index) throws {
         self.metadata = metadata
+        self.rowIndex = rowIndex
+        
         guard let flags = FieldAttributes(rawValue: try UInt16(parsingLittleEndian: &span)) else {
             throw FieldError.invalidFieldAttributes
         }
@@ -30,7 +46,7 @@ struct Field {
     
     init(metadata: MetadataDB, rowIndex: Index) throws {
         self = try metadata.withRowSpan(in: .field, rowIndex: rowIndex) { span in
-            try Self(metadata: metadata, span: &span)
+            try Self(metadata: metadata, parsing: &span, rowIndex)
         }
     }
 }

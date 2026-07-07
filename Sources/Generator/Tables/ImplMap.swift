@@ -26,8 +26,18 @@ struct ImplMap {
         get throws { try .init(metadata: metadata, rowIndex: importScopeIndex) }
     }
     
-    func compareMemberForwardedIndex(index: Index) -> Ordering {
-        memberForwardedIndex.index.compare(to: index)
+    static func equalRange(
+        in metadata: MetadataDB,
+        tag: MemberForwarded.Tag,
+        index: Index
+    ) throws -> Range<Index> {
+        let codedIndex = CodedIndex<MemberForwarded.Tag>(tag: tag, index: index)
+        
+        return try metadata.equalRange(in: .implMap) { rowIndex in
+            try ImplMap(metadata: metadata, rowIndex: rowIndex)
+                .memberForwardedIndex
+                .compare(to: codedIndex)
+        }
     }
     
     private init(metadata: MetadataDB, span: inout ParserSpan) throws {

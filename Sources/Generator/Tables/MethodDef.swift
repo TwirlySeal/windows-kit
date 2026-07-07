@@ -44,18 +44,27 @@ struct MethodDef {
     
     var implMap: ImplMap? {
         get throws {
-            let range = try metadata.equalRange(in: .implMap) { rowIndex in
-                try ImplMap(metadata: metadata, rowIndex: rowIndex)
-                    .compareMemberForwardedIndex(index: self.rowIndex)
-            }
-            
-            return try range.first.map { index in
-                try ImplMap(metadata: metadata, rowIndex: index)
+            try ImplMap.equalRange(in: metadata, tag: .methodDef, index: self.rowIndex)
+                .first
+                .map { index in
+                    try ImplMap(metadata: metadata, rowIndex: index)
+                }
+        }
+    }
+    
+    var customAttributes: [CustomAttribute] {
+        get throws {
+            try CustomAttribute.equalRange(
+                in: metadata,
+                tag: .methodDef,
+                index: self.rowIndex
+            ).map { index in
+                try CustomAttribute(metadata: metadata, rowIndex: index)
             }
         }
     }
     
-    private init(metadata: MetadataDB, span: inout ParserSpan, rowIndex: Index) throws {
+    private init(metadata: MetadataDB, parsing span: inout ParserSpan, _ rowIndex: Index) throws {
         self.metadata = metadata
         self.rowIndex = rowIndex
         self.rva = try UInt32(parsingLittleEndian: &span)
@@ -81,7 +90,7 @@ struct MethodDef {
     
     init(metadata: MetadataDB, rowIndex: Index) throws {
         self = try metadata.withRowSpan(in: .methodDef, rowIndex: rowIndex) { span in
-            try Self(metadata: metadata, span: &span, rowIndex: rowIndex)
+            try Self(metadata: metadata, parsing: &span, rowIndex)
         }
     }
 }

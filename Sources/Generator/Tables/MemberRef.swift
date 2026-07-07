@@ -6,6 +6,7 @@ enum MemberRefError: Error {
 
 struct MemberRef {
     private let metadata: MetadataDB
+    private let rowIndex: Index
     
     private let classIndex: CodedIndex<MemberRefParent.Tag>
     private let nameIndex: HeapIndex
@@ -27,8 +28,21 @@ struct MemberRef {
         }
     }
     
-    private init(metadata: MetadataDB, span: inout ParserSpan) throws {
+    var customAttributes: [CustomAttribute] {
+        get throws {
+            try CustomAttribute.equalRange(
+                in: metadata,
+                tag: .memberRef,
+                index: self.rowIndex
+            ).map { index in
+                try CustomAttribute(metadata: metadata, rowIndex: index)
+            }
+        }
+    }
+    
+    private init(metadata: MetadataDB, parsing span: inout ParserSpan, _ rowIndex: Index) throws {
         self.metadata = metadata
+        self.rowIndex = rowIndex
         
         guard let classIndex = try CodedIndex<MemberRefParent.Tag>(
             parsing: &span,
@@ -44,7 +58,7 @@ struct MemberRef {
     
     init(metadata: MetadataDB, rowIndex: Index) throws {
         self = try metadata.withRowSpan(in: .memberRef, rowIndex: rowIndex) { span in
-            try Self(metadata: metadata, span: &span)
+            try Self(metadata: metadata, parsing: &span, rowIndex)
         }
     }
 }

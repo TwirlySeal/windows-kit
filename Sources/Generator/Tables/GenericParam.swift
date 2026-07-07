@@ -7,6 +7,7 @@ enum GenericParamError: Error {
 
 struct GenericParam {
     private let metadata: MetadataDB
+    private let rowIndex: Index
     
     let number: UInt16
     let flags: GenericParamAttributes
@@ -25,12 +26,36 @@ struct GenericParam {
         }
     }
     
-    func compareOwnerIndex(index: Index) -> Ordering {
-        ownerIndex.index.compare(to: index)
+    var customAttributes: [CustomAttribute] {
+        get throws {
+            try CustomAttribute.equalRange(
+                in: metadata,
+                tag: .genericParam,
+                index: self.rowIndex
+            ).map { index in
+                try CustomAttribute(metadata: metadata, rowIndex: index)
+            }
+        }
     }
     
-    private init(metadata: MetadataDB, span: inout ParserSpan) throws {
+    static func equalRange(
+        in metadata: MetadataDB,
+        tag: TypeOrMethodDef.Tag,
+        index: Index
+    ) throws -> Range<Index> {
+        let codedIndex = CodedIndex<TypeOrMethodDef.Tag>(tag: tag, index: index)
+        
+        return try metadata.equalRange(in: .genericParam) { rowIndex in
+            try GenericParam(metadata: metadata, rowIndex: rowIndex)
+                .ownerIndex
+                .compare(to: codedIndex)
+        }
+    }
+    
+    private init(metadata: MetadataDB, span: inout ParserSpan, _ rowIndex: Index) throws {
         self.metadata = metadata
+        self.rowIndex = rowIndex
+        
         self.number = try UInt16(parsingLittleEndian: &span)
         
         guard let flags = GenericParamAttributes(rawValue: try UInt16(parsingLittleEndian: &span)) else {
@@ -51,7 +76,7 @@ struct GenericParam {
     
     init(metadata: MetadataDB, rowIndex: Index) throws {
         self = try metadata.withRowSpan(in: .genericParam, rowIndex: rowIndex) { span in
-            try Self(metadata: metadata, span: &span)
+            try Self(metadata: metadata, span: &span, rowIndex)
         }
     }
 }

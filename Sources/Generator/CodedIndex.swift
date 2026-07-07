@@ -12,11 +12,22 @@ protocol CodedIndexTag: RawRepresentable where RawValue == Index.RawValue {
 }
 
 struct CodedIndex<Tag: CodedIndexTag> {
+    typealias RawValue = Tag.RawValue
+    
     let tag: Tag
     let index: Index
     
-    init?(rawValue: Tag.RawValue) throws {
-        let mask: Tag.RawValue = (1 << Tag.bits) - 1
+    var rawValue: RawValue {
+        (index.rawValue << Tag.bits) | tag.rawValue
+    }
+    
+    init(tag: Tag, index: Index) {
+        self.tag = tag
+        self.index = index
+    }
+    
+    init?(rawValue: RawValue) throws {
+        let mask: RawValue = (1 << Tag.bits) - 1
         let tagBits = rawValue & mask
         guard let tag = Tag.init(rawValue: tagBits) else {
             throw MetadataError.invalidCodedIndexTag
@@ -32,6 +43,18 @@ struct CodedIndex<Tag: CodedIndexTag> {
     
     init?(parsing span: inout ParserSpan, size: UInt8) throws {
         try self.init(rawValue: try .init(parsingLittleEndian: &span, byteCount: Int(size)))
+    }
+}
+
+extension CodedIndex: Equatable {
+    static func == (lhs: CodedIndex<Tag>, rhs: CodedIndex<Tag>) -> Bool {
+        lhs.rawValue == rhs.rawValue
+    }
+}
+
+extension CodedIndex: Comparable {
+    static func < (lhs: Self, rhs: Self) -> Bool {
+        lhs.rawValue < rhs.rawValue
     }
 }
 

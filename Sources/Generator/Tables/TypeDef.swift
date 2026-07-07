@@ -75,39 +75,40 @@ struct TypeDef {
     
     var genericParams: [GenericParam] {
         get throws {
-            let range = try metadata.equalRange(in: .genericParam) { rowIndex in
-                try GenericParam(metadata: metadata, rowIndex: rowIndex)
-                    .compareOwnerIndex(index: self.rowIndex)
-            }
-            
-            return try range.map { index in
-                try GenericParam(metadata: metadata, rowIndex: index)
-            }
+            try GenericParam.equalRange(in: metadata, tag: .typeDef, index: self.rowIndex)
+                .map { index in
+                    try GenericParam(metadata: metadata, rowIndex: index)
+                }
         }
     }
     
     var interfaceImpls: [InterfaceImpl] {
         get throws {
-            let range = try metadata.equalRange(in: .interfaceImpl) { rowIndex in
-                try InterfaceImpl(metadata: metadata, rowIndex: rowIndex)
-                    .compareClassIndex(index: self.rowIndex)
-            }
-            
-            return try range.map { index in
-                try InterfaceImpl(metadata: metadata, rowIndex: index)
-            }
+            try InterfaceImpl.equalRange(in: metadata, index: self.rowIndex)
+                .map { index in
+                    try InterfaceImpl(metadata: metadata, rowIndex: index)
+                }
         }
     }
     
     var classLayout: ClassLayout? {
         get throws {
-            let range = try metadata.equalRange(in: .classLayout) { rowIndex in
-                try ClassLayout(metadata: metadata, rowIndex: rowIndex)
-                    .compareParentIndex(index: self.rowIndex)
-            }
-            
-            return try range.first.map { index in
-                try ClassLayout(metadata: metadata, rowIndex: index)
+            try ClassLayout.equalRange(in: metadata, index: self.rowIndex)
+                .first
+                .map { index in
+                    try ClassLayout(metadata: metadata, rowIndex: index)
+                }
+        }
+    }
+    
+    var customAttributes: [CustomAttribute] {
+        get throws {
+            try CustomAttribute.equalRange(
+                in: metadata,
+                tag: .typeDef,
+                index: self.rowIndex
+            ).map { index in
+                try CustomAttribute(metadata: metadata, rowIndex: index)
             }
         }
     }

@@ -46,7 +46,21 @@ struct CustomAttribute {
         }
     }
     
-    private init(metadata: MetadataDB, span: inout ParserSpan) throws {
+    static func equalRange(
+        in metadata: MetadataDB,
+        tag: HasCustomAttribute.Tag,
+        index: Index
+    ) throws -> Range<Index> {
+        let codedIndex = CodedIndex<HasCustomAttribute.Tag>(tag: tag, index: index)
+        
+        return try metadata.equalRange(in: .customAttribute) { rowIndex in
+            try CustomAttribute(metadata: metadata, rowIndex: rowIndex)
+                .parentIndex
+                .compare(to: codedIndex)
+        }
+    }
+    
+    private init(metadata: MetadataDB, parsing span: inout ParserSpan) throws {
         self.metadata = metadata
         
         guard let parentIndex = try CodedIndex<HasCustomAttribute.Tag>(
@@ -70,7 +84,7 @@ struct CustomAttribute {
     
     init(metadata: MetadataDB, rowIndex: Index) throws {
         self = try metadata.withRowSpan(in: .customAttribute, rowIndex: rowIndex) { span in
-            try Self(metadata: metadata, span: &span)
+            try Self(metadata: metadata, parsing: &span)
         }
     }
 }

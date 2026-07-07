@@ -85,7 +85,7 @@ struct Constant {
         }
     }
     
-    private init(metadata: MetadataDB, span: inout ParserSpan) throws {
+    private init(metadata: MetadataDB, parsing span: inout ParserSpan) throws {
         self.metadata = metadata
         
         self.type = switch try UInt8(parsing: &span) {
@@ -139,7 +139,7 @@ struct Constant {
     
     init(metadata: MetadataDB, rowIndex: Index) throws {
         self = try metadata.withRowSpan(in: .constant, rowIndex: rowIndex) { span in
-            try Self(metadata: metadata, span: &span)
+            try Self(metadata: metadata, parsing: &span)
         }
     }
 }

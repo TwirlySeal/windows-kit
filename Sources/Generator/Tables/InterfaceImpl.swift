@@ -7,6 +7,7 @@ enum InterfaceImplError: Error {
 
 struct InterfaceImpl {
     private let metadata: MetadataDB
+    private let rowIndex: Index
     
     private let classIndex: Index
     private let interfaceIndex: CodedIndex<TypeDefOrRef.Tag>
@@ -19,12 +20,32 @@ struct InterfaceImpl {
         get throws { try TypeDefOrRef(metadata: metadata, index: interfaceIndex) }
     }
     
-    func compareClassIndex(index: Index) -> Ordering {
-        classIndex.compare(to: index)
+    var customAttributes: [CustomAttribute] {
+        get throws {
+            try CustomAttribute.equalRange(
+                in: metadata,
+                tag: .interfaceImpl,
+                index: self.rowIndex
+            ).map { index in
+                try CustomAttribute(metadata: metadata, rowIndex: index)
+            }
+        }
     }
     
-    private init(metadata: MetadataDB, span: inout ParserSpan) throws {
+    static func equalRange(
+        in metadata: MetadataDB,
+        index: Index
+    ) throws -> Range<Index> {
+        try metadata.equalRange(in: .interfaceImpl) { rowIndex in
+            try InterfaceImpl(metadata: metadata, rowIndex: rowIndex)
+                .classIndex
+                .compare(to: index)
+        }
+    }
+    
+    private init(metadata: MetadataDB, parsing span: inout ParserSpan, _ rowIndex: Index) throws {
         self.metadata = metadata
+        self.rowIndex = rowIndex
         
         guard let classIndex = try Index(parsing: &span, size: metadata.indexSizes.typeDef) else {
             throw InterfaceImplError.missingClass
@@ -42,7 +63,7 @@ struct InterfaceImpl {
     
     init(metadata: MetadataDB, rowIndex: Index) throws {
         self = try metadata.withRowSpan(in: .interfaceImpl, rowIndex: rowIndex) { span in
-            try Self(metadata: metadata, span: &span)
+            try Self(metadata: metadata, parsing: &span, rowIndex)
         }
     }
 }

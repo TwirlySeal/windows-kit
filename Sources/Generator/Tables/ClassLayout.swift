@@ -15,11 +15,18 @@ struct ClassLayout {
         get throws { try .init(metadata: metadata, rowIndex: parentIndex) }
     }
     
-    func compareParentIndex(index: Index) -> Ordering {
-        parentIndex.compare(to: index)
+    static func equalRange(
+        in metadata: MetadataDB,
+        index: Index
+    ) throws -> Range<Index> {
+        try metadata.equalRange(in: .classLayout) { rowIndex in
+            try ClassLayout(metadata: metadata, rowIndex: rowIndex)
+                .parentIndex
+                .compare(to: index)
+        }
     }
     
-    private init(metadata: MetadataDB, span: inout ParserSpan) throws {
+    private init(metadata: MetadataDB, parsing span: inout ParserSpan) throws {
         self.metadata = metadata
         self.packingSize = try UInt16(parsingLittleEndian: &span)
         self.classSize = try UInt32(parsingLittleEndian: &span)
@@ -32,7 +39,7 @@ struct ClassLayout {
     
     init(metadata: MetadataDB, rowIndex: Index) throws {
         self = try metadata.withRowSpan(in: .classLayout, rowIndex: rowIndex) { span in
-            try Self(metadata: metadata, span: &span)
+            try Self(metadata: metadata, parsing: &span)
         }
     }
 }

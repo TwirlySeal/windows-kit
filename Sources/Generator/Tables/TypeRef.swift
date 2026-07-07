@@ -2,6 +2,7 @@ import BinaryParsing
 
 struct TypeRef {
     private let metadata: MetadataDB
+    private let rowIndex: Index
     
     private let resolutionScopeIndex: CodedIndex<ResolutionScope.Tag>?
     private let typeNameIndex: HeapIndex
@@ -23,8 +24,21 @@ struct TypeRef {
         get throws { try metadata.string(at: typeNamespaceIndex) }
     }
     
-    private init(metadata: MetadataDB, span: inout ParserSpan) throws {
+    var customAttributes: [CustomAttribute] {
+        get throws {
+            try CustomAttribute.equalRange(
+                in: metadata,
+                tag: .typeRef,
+                index: self.rowIndex
+            ).map { index in
+                try CustomAttribute(metadata: metadata, rowIndex: index)
+            }
+        }
+    }
+    
+    private init(metadata: MetadataDB, parsing span: inout ParserSpan, _ rowIndex: Index) throws {
         self.metadata = metadata
+        self.rowIndex = rowIndex
         
         self.resolutionScopeIndex = try CodedIndex<ResolutionScope.Tag>(
             parsing: &span,
@@ -36,7 +50,7 @@ struct TypeRef {
     
     init(metadata: MetadataDB, rowIndex: Index) throws {
         self = try metadata.withRowSpan(in: .typeRef, rowIndex: rowIndex) { span in
-            try Self(metadata: metadata, span: &span)
+            try Self(metadata: metadata, parsing: &span, rowIndex)
         }
     }
 }
