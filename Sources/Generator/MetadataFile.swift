@@ -32,6 +32,9 @@ struct HeapIndex {
 /// reference to this class to lazily parse linked data. These structs keep
 /// indices and the file reference private, and provide computed properties
 /// that parse linked data when accessed.
+///
+/// It is a class because its large size would make it expensive to copy and it
+/// is frequently passed around
 final class MetadataFile {
     private let data: Data
     
