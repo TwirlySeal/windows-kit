@@ -304,6 +304,14 @@ final class MetadataFile {
         }
     }
     
+    /// Parse a length-prefixed UTF-8 string
+    static func serString(parsing span: inout ParserSpan) throws -> String {
+        // Null strings (with PackedLen = 0xFF) do not occur in Windows Metadata
+        let packedLen = try Self.parseCompressedUnsignedInteger(from: &span)
+        
+        return try String(parsingUTF8: &span, count: Int(packedLen))
+    }
+    
     init(parsing data: Data) throws {
         self.data = data
         var span = ParserSpan(data.span.bytes)

@@ -178,7 +178,7 @@ enum Type {
             // SERIALIZATION_TYPE_ENUM in custom attribute named argument format
             // (ECMA-335 §II.23.1.16): followed by a SerString of the enum type name.
             // Enums are always value types.
-            self = .enum(name: try serString(parsing: &span))
+            self = .enum(name: try MetadataFile.serString(parsing: &span))
             
         default:
             throw TypeError.invalidType

@@ -14,7 +14,7 @@ enum TypeDefOrRef {
                 try typeDef.name
             case .typeRef(let typeRef):
                 try typeRef.name
-            case .typeSpec(let typeSpec):
+            case .typeSpec:
                 throw TypeDefOrRefError.disallowedTypeSpec
             }
         }
@@ -27,7 +27,7 @@ enum TypeDefOrRef {
                 try typeDef.namespace
             case .typeRef(let typeRef):
                 try typeRef.namespace
-            case .typeSpec(let typeSpec):
+            case .typeSpec:
                 throw TypeDefOrRefError.disallowedTypeSpec
             }
         }

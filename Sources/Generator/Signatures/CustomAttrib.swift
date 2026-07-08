@@ -34,7 +34,7 @@ struct CustomAttrib {
         for _ in 0..<numNamed {
             _ = try ArgumentKind(parsing: &span)
             let type = try Type(parsing: &span)
-            let name = try serString(parsing: &span)
+            let name = try MetadataFile.serString(parsing: &span)
             let value = try Value(in: file, parsing: &span, type: type)
             
             arguments.append(
@@ -116,13 +116,13 @@ struct CustomAttrib {
                 self = .float64(try Double(parsingLittleEndian: &span))
                 
             case .string:
-                self = .string(try serString(parsing: &span))
+                self = .string(try MetadataFile.serString(parsing: &span))
                 
             case .class(let index):
                 let (namespace, name) = try Self.getName(in: file, index: index)
                 
                 if namespace == "System" && name == "Type" {
-                    self = .type(name: try serString(parsing: &span))
+                    self = .type(name: try MetadataFile.serString(parsing: &span))
                 } else {
                     self = .enumValue(
                         name: Self.getFullName(namespace, name),
@@ -168,12 +168,4 @@ struct CustomAttrib {
             }
         }
     }
-}
-
-/// Parse a length-prefixed UTF-8 string
-func serString(parsing span: inout ParserSpan) throws -> String {
-    // Null strings (with PackedLen = 0xFF) do not occur in Windows Metadata
-    let packedLen = try MetadataFile.parseCompressedUnsignedInteger(from: &span)
-    
-    return try String(parsingUTF8: &span, count: Int(packedLen))
 }
