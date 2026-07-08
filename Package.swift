@@ -19,9 +19,15 @@ let package = Package(
         .executableTarget(
             name: "Generator",
             dependencies: [
+                .target(name: "WinMD"),
+                .target(name: "Zip")
+            ]
+        ),
+        .target(
+            name: "WinMD",
+            dependencies: [
                 .product(name: "BinaryParsing", package: "swift-binary-parsing"),
                 .product(name: "Algorithms", package: "swift-algorithms"),
-                .target(name: "Zip")
             ]
         ),
         .target(

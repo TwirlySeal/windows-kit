@@ -35,7 +35,7 @@ enum ZipError: Error {
     case invalidLocalHeaderSignature
 }
 
-public func parseZip(byteSpan: borrowing Span<UInt8>) throws -> [CentralDirectoryEntry] {
+public func parseZip(from byteSpan: borrowing Span<UInt8>) throws -> [CentralDirectoryEntry] {
 	guard let eocdOffset = findEOCD(span: byteSpan) else {
 		throw ZipError.noCentralDirectory
 	}

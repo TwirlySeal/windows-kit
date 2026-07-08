@@ -1,22 +1,19 @@
 import Foundation
 import Zip
+import WinMD
 
 @main
 struct Generator {
-    static func main() async {
-        do {
-            try await run()
-        } catch {
-            print(error)
-            exit(1)
-        }
+    static func main() async throws {
+        // Test MetadataDB
+        _ = try await getDatabase()
     }
     
     static let packageID = "Microsoft.Windows.SDK.Contracts"
     static let packageVersion = "10.0.28000.1721"
     static let cacheDirectoryName = ".winmd-cache"
     
-    static func run() async throws {
+    static func getDatabase() async throws -> MetadataDB {
         let cachePath = URL(fileURLWithPath: FileManager.default.currentDirectoryPath)
             .appending(
                 components: cacheDirectoryName, packageID, packageVersion,
@@ -32,19 +29,20 @@ struct Generator {
                 includingPropertiesForKeys: nil,
                 options: .skipsHiddenFiles
             )
-            for metadataFileURL in metadataFileURLs {
-                let data = try Data(contentsOf: metadataFileURL, options: .mappedIfSafe)
-                
-                // Test WinMD parser
-                let metadata = try MetadataFile(parsing: data)
+            let metadataFiles = try metadataFileURLs.map { url in
+                let data = try Data(contentsOf: url, options: .mappedIfSafe)
+                return try MetadataFile(parsing: data)
             }
+            
+            return try MetadataDB(files: metadataFiles)
         } else {
-            try await runRemote(cachePath: cachePath)
+            let database = try await databaseFromNuGet(cachePath: cachePath)
             FileManager.default.createFile(atPath: successPath.path(), contents: nil)
+            return database
         }
     }
     
-    static func runRemote(cachePath: URL) async throws {
+    static func databaseFromNuGet(cachePath: URL) async throws -> MetadataDB {
         print("Locating package: \(packageID)")
         let packageResourceURL = try await getPackageDownloadURL(packageID: packageID, packageVersion: packageVersion)
 
@@ -52,8 +50,10 @@ struct Generator {
         let contents = try await download(url: packageResourceURL)
         
         print("Extracting nupkg")
-        let cdEntries = try parseZip(byteSpan: contents.span)
+        let cdEntries = try parseZip(from: contents.span)
         
+        var metadataFiles = [MetadataFile]()
+        metadataFiles.reserveCapacity(cdEntries.count)
         for entry in cdEntries {
             guard entry.fileName.hasPrefix("ref/netstandard2.0"),
                   entry.fileName.hasSuffix(".winmd") else {
@@ -68,8 +68,9 @@ struct Generator {
             let data = try zipEntry.extract()
             try data.write(to: destination)
             
-            // Test WinMD parser
-            let metadata = try MetadataFile(parsing: data)
+            metadataFiles.append(try MetadataFile(parsing: data))
         }
+        
+        return try MetadataDB(files: metadataFiles)
     }
 }

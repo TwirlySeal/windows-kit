@@ -9,7 +9,7 @@ enum Item {
     case const(Field)
 }
 
-struct MetadataDB {
+public struct MetadataDB {
     let files: [MetadataFile]
     
     // namespace -> name -> [TypeDef]
@@ -113,7 +113,7 @@ struct MetadataDB {
         }
     }
     
-    init(files: [MetadataFile]) throws {
+    public init(files: [MetadataFile]) throws {
         self.files = files
         
         // Build the type map and nested class map

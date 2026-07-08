@@ -40,7 +40,7 @@ struct HeapIndex {
 ///
 /// This is a class because its large size would make it expensive to copy and it
 /// is frequently passed around
-final class MetadataFile {
+public final class MetadataFile {
     private let data: Data
     
     // Metadata stream
@@ -74,13 +74,14 @@ final class MetadataFile {
     }
     
     /// Get a range over all the row indices in a table
-    func tableRange(in table: TableID) throws -> ClosedRange<Index> {
-        guard let table = tables[table.rawValue] else {
-            throw MetadataFileError.missingTable
-        }
+    func tableRange(in table: TableID) throws -> Range<Index> {
         let firstIndex = Index(rawValue: 1)!
-        let lastIndex = Index(rawValue: table.rowCount)!
-        return firstIndex...lastIndex
+        
+        guard let table = tables[table.rawValue] else {
+            return firstIndex..<firstIndex
+        }
+        let lastIndexExclusive = Index(rawValue: table.rowCount + 1)!
+        return firstIndex..<lastIndexExclusive
     }
     
     /// Provides temporary access to a span over the bytes in a table row. The
@@ -312,7 +313,7 @@ final class MetadataFile {
         return try String(parsingUTF8: &span, count: Int(packedLen))
     }
     
-    init(parsing data: Data) throws {
+    public init(parsing data: Data) throws {
         self.data = data
         var span = ParserSpan(data.span.bytes)
         
