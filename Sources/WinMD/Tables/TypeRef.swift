@@ -4,17 +4,11 @@ struct TypeRef {
     private let file: MetadataFile
     private let rowIndex: Index
     
+    // Not used
     private let resolutionScopeIndex: CodedIndex<ResolutionScope.Tag>?
+    
     private let typeNameIndex: HeapIndex
     private let typeNamespaceIndex: HeapIndex
-    
-    var resolutionScope: ResolutionScope? {
-        get throws {
-            try resolutionScopeIndex.map { index in
-                try ResolutionScope(in: file, at: index)
-            }
-        }
-    }
     
     var name: String {
         get throws { try file.string(at: typeNameIndex) }
