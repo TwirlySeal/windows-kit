@@ -22,7 +22,16 @@ Metadata is stored in
 [WinMD](https://learn.microsoft.com/en-us/uwp/winrt-cref/winmd-files) (Windows
 Metadata) files, which use the same binary format as .NET assemblies
 ([ECMA-335](https://ecma-international.org/wp-content/uploads/ECMA-335_6th_edition_june_2012.pdf))
-and are distributed via [NuGet](https://www.nuget.org).
+and are distributed via NuGet packages:
+
+- Win32:
+  [Microsoft.Windows.SDK.Win32Metadata](https://www.nuget.org/packages/Microsoft.Windows.SDK.Win32Metadata)
+
+- Win32 (Drivers):
+  [Microsoft.Windows.WDK.Win32Metadata](https://www.nuget.org/packages/Microsoft.Windows.WDK.Win32Metadata)
+
+- WinRT:
+  [Microsoft.Windows.SDK.Contracts](https://www.nuget.org/packages/Microsoft.Windows.SDK.Contracts)
 
 This project downloads and parses these files and generates Swift code for the
 APIs they describe. The generated Swift code implements the ABIs and maps
