@@ -41,6 +41,12 @@ extension Index: Strideable {
     }
 }
 
+extension Index: Hashable {
+    func hash(into hasher: inout Hasher) {
+        hasher.combine(self.rawValue)
+    }
+}
+
 struct IndexSizes {
     let assemblyRef: UInt8
     let typeDef: UInt8

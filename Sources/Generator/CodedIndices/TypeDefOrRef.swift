@@ -1,7 +1,37 @@
+enum TypeDefOrRefError: Error {
+    case disallowedTypeSpec
+}
+
 enum TypeDefOrRef {
     case typeDef(TypeDef)
     case typeRef(TypeRef)
     case typeSpec(TypeSpec)
+    
+    var name: String {
+        get throws {
+            switch self {
+            case .typeDef(let typeDef):
+                try typeDef.name
+            case .typeRef(let typeRef):
+                try typeRef.name
+            case .typeSpec(let typeSpec):
+                throw TypeDefOrRefError.disallowedTypeSpec
+            }
+        }
+    }
+    
+    var namespace: String {
+        get throws {
+            switch self {
+            case .typeDef(let typeDef):
+                try typeDef.namespace
+            case .typeRef(let typeRef):
+                try typeRef.namespace
+            case .typeSpec(let typeSpec):
+                throw TypeDefOrRefError.disallowedTypeSpec
+            }
+        }
+    }
     
     enum Tag: Index.RawValue, CodedIndexTag {
         static let bits = 2

@@ -42,6 +42,10 @@ struct TypeAttributes {
 
 		static let `import` = Self(rawValue: 0x00001000)
 		static let serializable = Self(rawValue: 0x00002000)
+        
+        /// Represents the `tdWindowsRuntime` flag which isn't defined in
+        /// ECMA-335 and is specific to Windows Metadata
+        static let windowsRuntime = Self(rawValue: 0x00004000)
 	}
 
 	enum StringFormatting: RawValue, Maskable {

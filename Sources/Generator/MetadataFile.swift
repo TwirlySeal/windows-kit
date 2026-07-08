@@ -73,6 +73,16 @@ final class MetadataFile {
         sorted & (1 << table.rawValue) != 0
     }
     
+    /// Get a range over all the row indices in a table
+    func tableRange(in table: TableID) throws -> ClosedRange<Index> {
+        guard let table = tables[table.rawValue] else {
+            throw MetadataFileError.missingTable
+        }
+        let firstIndex = Index(rawValue: 1)!
+        let lastIndex = Index(rawValue: table.rowCount)!
+        return firstIndex...lastIndex
+    }
+    
     /// Provides temporary access to a span over the bytes in a table row. The
     /// size of the span is equal to the stride of the table for safety.
     ///

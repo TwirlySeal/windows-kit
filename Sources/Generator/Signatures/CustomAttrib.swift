@@ -119,7 +119,7 @@ struct CustomAttrib {
                 self = .string(try serString(parsing: &span))
                 
             case .class(let index):
-                let (namespace, name) = try Self.getName(metadata: file, index: index)
+                let (namespace, name) = try Self.getName(in: file, index: index)
                 
                 if namespace == "System" && name == "Type" {
                     self = .type(name: try serString(parsing: &span))
@@ -131,7 +131,7 @@ struct CustomAttrib {
                 }
                 
             case .valueType(let index):
-                let (namespace, name) = try Self.getName(metadata: file, index: index)
+                let (namespace, name) = try Self.getName(in: file, index: index)
                 self = .enumValue(
                     name: Self.getFullName(namespace, name),
                     value: try Int32(parsingLittleEndian: &span)
@@ -149,24 +149,13 @@ struct CustomAttrib {
         }
         
         static func getName(
-            metadata: MetadataFile,
+            in file: MetadataFile,
             index: CodedIndex<TypeDefOrRef.Tag>
         ) throws -> (namespace: String, name: String) {
-            let namespace: String
-            let name: String
+            let typeDefOrRef = try TypeDefOrRef(in: file, at: index)
             
-            switch try TypeDefOrRef(in: metadata, at: index) {
-            case .typeDef(let typeDef):
-                namespace = try typeDef.namespace
-                name = try typeDef.name
-                
-            case .typeRef(let typeRef):
-                namespace = try typeRef.namespace
-                name = try typeRef.name
-                
-            case .typeSpec(_):
-                throw CustomAttribError.invalidValueType
-            }
+            let namespace = try typeDefOrRef.namespace
+            let name = try typeDefOrRef.name
             
             return (namespace, name)
         }

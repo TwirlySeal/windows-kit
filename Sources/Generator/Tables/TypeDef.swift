@@ -2,6 +2,7 @@ import BinaryParsing
 
 enum TypeDefError: Error {
     case invalidTypeAttributes
+    case invalidExtends
 }
 
 struct TypeDef {
@@ -113,6 +114,44 @@ struct TypeDef {
         }
     }
     
+    enum Category {
+        case `enum`
+        case delegate
+        case `struct`
+        case attribute
+        case `class`
+        case interface
+    }
+    
+    var category: Category {
+        get throws {
+            guard let extends = try extends else {
+                return .interface
+            }
+            
+            guard try extends.namespace == "System" else {
+                return .class
+            }
+            
+            return switch try extends.name {
+            case "Enum":
+                .enum
+                
+            case "MulticastDelegate":
+                .delegate
+                
+            case "ValueType":
+                .struct
+                
+            case "Attribute":
+                .attribute
+                
+            default:
+                .class
+            }
+        }
+    }
+    
     private init(in file: MetadataFile, parsing span: inout ParserSpan, _ rowIndex: Index) throws {
         self.file = file
         self.rowIndex = rowIndex
@@ -136,5 +175,22 @@ struct TypeDef {
         self = try file.withRowSpan(in: .typeDef, at: rowIndex) { span in
             try Self(in: file, parsing: &span, rowIndex)
         }
+    }
+}
+
+extension TypeDef: Equatable {
+    static func == (lhs: TypeDef, rhs: TypeDef) -> Bool {
+        // Both must reside in the same file instance and point to the same row
+        // index
+        lhs.file === rhs.file && lhs.rowIndex == rhs.rowIndex
+    }
+}
+
+extension TypeDef: Hashable {
+    func hash(into hasher: inout Hasher) {
+        // Combine the memory address of the file class instance
+        hasher.combine(ObjectIdentifier(file))
+        // Combine the unique row index value
+        hasher.combine(rowIndex)
     }
 }
