@@ -1,3 +1,8 @@
+enum MetadataError: Error {
+    case notFound(namespace: String, name: String)
+    case ambiguous(namespace: String, name: String)
+}
+
 enum Item {
     case type(TypeDef)
     case function(MethodDef)
@@ -15,6 +20,79 @@ struct MetadataDB {
     
     // parent -> children
     private let nested: [TypeDef: [TypeDef]]
+    
+    /// All namespaces containing at least one item
+    var namespaces: some Collection<String> {
+        items.keys
+    }
+    
+    var allItems: [Item] {
+        items.values.flatMap { dict in
+            dict.values.flatMap { $0 }
+        }
+    }
+    
+    /// Returns all items within a specific namespace.
+    func items(inNamespace namespace: String) -> [String: [Item]] {
+        items[namespace] ?? [:]
+    }
+    
+    /// Returns the items matching a namespace and name.
+    func getItems(namespace: String, name: String) -> [Item] {
+        items[namespace]?[name] ?? []
+    }
+    
+    /// Returns the single `Item` matching the namespace and name.
+    /// Throws an error if zero or multiple items are found.
+    func expectItem(namespace: String, name: String) throws -> Item {
+        let results = getItems(namespace: namespace, name: name)
+        
+        if results.isEmpty {
+            throw MetadataError.notFound(namespace: namespace, name: name)
+        } else if results.count > 1 {
+            throw MetadataError.ambiguous(namespace: namespace, name: name)
+        }
+        
+        return results[0]
+    }
+    
+    /// Returns the single `TypeDef` matching the namespace and name.
+    func expectType(namespace: String, name: Substring) throws -> TypeDef {
+        let results = types[namespace]?[name] ?? []
+        
+        if results.isEmpty {
+            throw MetadataError.notFound(
+                namespace: namespace,
+                name: String(name)
+            )
+        } else if results.count > 1 {
+            throw MetadataError.ambiguous(
+                namespace: namespace,
+                name: String(name)
+            )
+        }
+        
+        return results[0]
+    }
+    
+    /// Returns the types directly nested inside `typeDef`.
+    func nestedTypes(for typeDef: TypeDef) -> [TypeDef] {
+        nested[typeDef] ?? []
+    }
+
+    /// Performs a depth-first walk of every type nested directly or transitively inside `typeDef`.
+    func nestedTypesRecursive(for typeDef: TypeDef) -> [TypeDef] {
+        var result: [TypeDef] = []
+        collectNested(for: typeDef, into: &result)
+        return result
+    }
+    
+    private func collectNested(for typeDef: TypeDef, into array: inout [TypeDef]) {
+        for inner in nestedTypes(for: typeDef) {
+            array.append(inner)
+            collectNested(for: inner, into: &array)
+        }
+    }
     
     static func trimTick(_ name: Substring) -> Substring {
         if let index = name.firstIndex(of: "`") {
