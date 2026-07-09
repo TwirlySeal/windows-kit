@@ -39,13 +39,22 @@ Windows API constructs to equivalent Swift ones, such as Swift concurrency and
 errors. It will be distributed as libraries that anyone can use to develop
 Windows apps using Swift.
 
-## Currently Implemented Features
+## Projection Generator Features
 
-- Downloads Windows Metadata from the NuGet Server API and caches it locally
+- Pure Swift
 
 - A WinMD parser made with [Swift Binary
-  Parsing](https://apple.github.io/swift-binary-parsing/documentation/binaryparsing/)
+  Parsing](https://swiftpackageindex.com/apple/swift-binary-parsing)
 
-- A ZIP format parser (also made with Swift Binary Parsing) and Deflate
-  decompressor for extracting `.nupkg` files from NuGet containing the metadata
-  (these could be good to turn into separate libraries)
+- Downloads Windows Metadata packages from the NuGet Server API in `.nupkg`
+  format (which is just a renamed `.zip` file) and caches the metadata files
+  locally
+
+- A ZIP format parser also made with Swift Binary Parsing (used to extract the
+  NuGet packages)
+
+- A Deflate decompressor (used in the ZIP parser) made with a `BitSpan`
+  non-copyable LSB bit reader inspired by `ParserSpan` from Swift Binary Parsing
+
+> The ZIP parser, Deflate decompressor, and `BitSpan` could be good to make
+> available as separate libraries
