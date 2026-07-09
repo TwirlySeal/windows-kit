@@ -75,6 +75,7 @@ improve the interface.
 
 - A Deflate decompressor (used in the ZIP parser) made with a `BitSpan`
   non-copyable LSB bit reader inspired by `ParserSpan` from Swift Binary Parsing
+  and a two-level lookup table for Huffman decoding like zlib
 
 > The ZIP parser, Deflate decompressor, and `BitSpan` could be good to make
 > available as separate libraries
