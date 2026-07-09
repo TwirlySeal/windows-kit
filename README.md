@@ -16,8 +16,6 @@ Windows APIs provided by this project will include:
 - [Windows App
   SDK](https://learn.microsoft.com/en-us/windows/apps/windows-app-sdk/)
 
-> Inspired by [windows-rs](https://github.com/microsoft/windows-rs)
-
 ## How it works
 
 To be able to call Windows APIs from Swift, we need to speak their **ABI**
@@ -68,8 +66,8 @@ improve the interface.
 - A WinMD parser made with [Swift Binary
   Parsing](https://swiftpackageindex.com/apple/swift-binary-parsing)
 
-> Only the subset of ECMA-335 used by Windows Metadata is implemented, which
-> greatly reduces complexity
+  - Only the subset of ECMA-335 used by Windows Metadata is implemented, which
+    greatly reduces complexity
 
 - Downloads Windows Metadata packages from the NuGet Server API in `.nupkg`
   format (which is just a renamed `.zip` file) and caches the metadata files
