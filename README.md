@@ -1,19 +1,34 @@
 # Windows Kit
 
-The goal of this project is to provide an idiomatic Swift language projection of
-Windows APIs.
+The goal of this project is to let you call Windows APIs from Swift and make
+them behave like native Swift code, complete with Swift concurrency and error
+handling. This is accomplished by generating a *language projection*: bindings
+that map Windows API concepts to equivalent Swift ones. These bindings will be
+distributed as libraries that anyone can use to develop Windows apps using
+Swift.
 
-To be able to call Windows APIs from Swift, we need to speak their ABI
+Windows APIs provided by this project will include:
+
+- [Windows SDK](https://learn.microsoft.com/en-us/windows/apps/windows-sdk/)
+
+- Windows Driver Kit (WDK)
+
+- [Windows App
+  SDK](https://learn.microsoft.com/en-us/windows/apps/windows-app-sdk/)
+
+## How it works
+
+To be able to call Windows APIs from Swift, we need to speak their **ABI**
 (Application Binary Interface) which defines how compiled programs can talk to
 each other. There are 3 main ABIs used on Windows:
 
-1.  The C programming language ABI, used by the low-level Win32 API
+1.  The **C** programming language ABI, used by the low-level Win32 API
 
-2.  COM (Component Object Model), which adds object-oriented constructs on top
-    of the C ABI
+2.  **COM** (Component Object Model), which adds object-oriented constructs on
+    top of the C ABI
 
-3.  WinRT (Windows Runtime), which is based on COM but adds additional metadata
-    to enable automatic generation of safe, idiomatic bindings
+3.  **WinRT** (Windows Runtime), which is based on COM but adds additional
+    metadata to enable automatic generation of safe, idiomatic bindings
 
 Microsoft’s [win32metadata](https://github.com/microsoft/win32metadata) project
 also provides metadata for Win32 and COM APIs.
@@ -24,20 +39,25 @@ Metadata) files, which use the same binary format as .NET assemblies
 ([ECMA-335](https://ecma-international.org/wp-content/uploads/ECMA-335_6th_edition_june_2012.pdf))
 and are distributed via NuGet packages:
 
-- Win32:
+- Windows SDK (Win32):
   [Microsoft.Windows.SDK.Win32Metadata](https://www.nuget.org/packages/Microsoft.Windows.SDK.Win32Metadata)
 
-- Win32 (Drivers):
+- Windows Driver Kit (Win32):
   [Microsoft.Windows.WDK.Win32Metadata](https://www.nuget.org/packages/Microsoft.Windows.WDK.Win32Metadata)
 
-- WinRT:
+- Windows SDK (WinRT):
   [Microsoft.Windows.SDK.Contracts](https://www.nuget.org/packages/Microsoft.Windows.SDK.Contracts)
 
-This project downloads and parses these files and generates Swift code for the
-APIs they describe. The generated Swift code implements the ABIs and maps
-Windows API constructs to equivalent Swift ones, such as Swift concurrency and
-errors. It will be distributed as libraries that anyone can use to develop
-Windows apps using Swift.
+- Windows App SDK (WinRT):
+  [Microsoft.WindowsAppSDK](https://www.nuget.org/packages/Microsoft.WindowsAppSDK)
+
+  - This package includes both the metadata and C++ implementation
+
+We can download and parse these files to generate C/C++ headers that define the
+APIs and hide the ABI details. These headers will include Clang attributes that
+allow the Swift compiler to import the APIs with a more Swift-friendly
+interface, and we will also generate Swift wrappers where needed to further
+improve the interface.
 
 ## Projection Generator Features
 
