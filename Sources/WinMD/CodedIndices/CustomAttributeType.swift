@@ -2,6 +2,17 @@ enum CustomAttributeType {
     case methodDef(MethodDef)
     case memberRef(MemberRef)
     
+    var parent: MemberRefParent {
+        get throws {
+            switch self {
+            case .memberRef(let memberRef):
+                try memberRef.class
+            case .methodDef(let methodDef):
+                try methodDef.parent
+            }
+        }
+    }
+    
     init(in file: MetadataFile, at index: CodedIndex<Tag>) throws {
         switch index.tag {
         case .methodDef:

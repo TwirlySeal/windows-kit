@@ -22,10 +22,10 @@ struct Field {
     
     var customAttributes: [CustomAttribute] {
         get throws {
-            try CustomAttribute.equalRange(
-                in: file,
+            try CustomAttribute.rowRange(
                 tag: .field,
-                index: self.rowIndex
+                forParent: self.rowIndex,
+                in: file
             ).map { index in
                 try CustomAttribute(in: file, at: index)
             }

@@ -90,13 +90,6 @@ range. This is evidenced by windows-rs which assumes the list column of the next
 row is non-null
 ([source](https://github.com/microsoft/windows-rs/blob/a1e9fce43c026221f62f0a149267cb6d7d3c607b/crates/libs/metadata/src/reader/file.rs#L523-L538)).
 
-I did not consider this edge case when originally writing the list function
-using raw `Int` indices, until I introduced the `Index` type and the compiler
-revealed that the list column in the next row could be null. This shows how
-encoding constraints in the type system allows the compiler to reveal logical
-consequences you have not considered. While this edge case will not arise in
-Windows Metadata, I made the parser handle it because it is a neat find.
-
 ## Bitmask constants
 
 Some columns are structures containing multiple pieces of information in their

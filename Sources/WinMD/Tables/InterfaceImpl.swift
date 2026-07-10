@@ -22,22 +22,22 @@ struct InterfaceImpl {
     
     var customAttributes: [CustomAttribute] {
         get throws {
-            try CustomAttribute.equalRange(
-                in: file,
+            try CustomAttribute.rowRange(
                 tag: .interfaceImpl,
-                index: self.rowIndex
+                forParent: self.rowIndex,
+                in: file
             ).map { index in
                 try CustomAttribute(in: file, at: index)
             }
         }
     }
     
-    static func equalRange(
-        in metadata: MetadataFile,
-        index: Index
+    static func rowRange(
+        forOwner index: Index,
+        in file: MetadataFile
     ) throws -> Range<Index> {
-        try metadata.equalRange(in: .interfaceImpl) { rowIndex in
-            try InterfaceImpl(in: metadata, at: rowIndex)
+        try file.equalRange(searchingTable: .interfaceImpl) { rowIndex in
+            try InterfaceImpl(in: file, at: rowIndex)
                 .classIndex
                 .compare(to: index)
         }

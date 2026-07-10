@@ -28,10 +28,10 @@ struct MethodDef {
     var params: [Param] {
         get throws {
             let range = try file.listRowRange(
-                rowIndex: self.rowIndex,
-                startListIndex: paramListIndex,
-                currentTable: .methodDef,
-                linkedTable: .param
+                forParentRow: self.rowIndex,
+                startingChildIndex: paramListIndex,
+                parentTableID: .methodDef,
+                childTableID: .param
             ) { rowIndex in
                 try Self(in: file, at: rowIndex).paramListIndex
             }
@@ -44,7 +44,7 @@ struct MethodDef {
     
     var implMap: ImplMap? {
         get throws {
-            try ImplMap.equalRange(in: file, tag: .methodDef, index: self.rowIndex)
+            try ImplMap.rowRange(tag: .methodDef, forOwner: self.rowIndex, in: file)
                 .first
                 .map { index in
                     try ImplMap(in: file, at: index)
@@ -54,13 +54,23 @@ struct MethodDef {
     
     var customAttributes: [CustomAttribute] {
         get throws {
-            try CustomAttribute.equalRange(
-                in: file,
+            try CustomAttribute.rowRange(
                 tag: .methodDef,
-                index: self.rowIndex
+                forParent: self.rowIndex,
+                in: file
             ).map { index in
                 try CustomAttribute(in: file, at: index)
             }
+        }
+    }
+    
+    var parent: MemberRefParent {
+        get throws {
+            let index = try TypeDef.parentOfMethod(at: self.rowIndex, in: file)
+            
+            return MemberRefParent.typeDef(
+                try TypeDef(in: file, at: index)
+            )
         }
     }
     

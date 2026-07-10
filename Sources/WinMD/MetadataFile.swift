@@ -110,42 +110,65 @@ public final class MetadataFile {
     
     /// Calculates the row range in a linked table for a list column
     func listRowRange(
-        rowIndex: Index,
-        startListIndex: Index,
-        currentTable: TableID,
-        linkedTable: TableID,
-        readPointer: (_ rowIndex: Index) throws -> Index?
+        forParentRow parentRowIndex: Index,
+        startingChildIndex: Index,
+        parentTableID: TableID,
+        childTableID: TableID,
+        readNextChildIndex: (_ parentRowIndex: Index) throws -> Index?
     ) throws -> Range<Index> {
-        guard let currentTable = tables[currentTable.rawValue],
-              let linkedTable = tables[linkedTable.rawValue] else {
+        guard let parentTable = tables[parentTableID.rawValue],
+              let childTable = tables[childTableID.rawValue] else {
             throw MetadataFileError.missingTable
         }
         
-        // Scan forward to find next non-null boundary
-        var nextListIndex: Index? = nil
-        if rowIndex.rawValue < currentTable.rowCount {
-            let nextRowIndex = rowIndex.advanced(by: 1)
-            let endRowIndex = Index(rawValue: currentTable.rowCount)!
-            
-            for index in nextRowIndex...endRowIndex {
-                if let nextPointer = try readPointer(index) {
-                    nextListIndex = nextPointer
-                    break
-                }
-            }
+        let exclusiveEndChildIndex: Index
+        
+        if parentRowIndex.rawValue < parentTable.rowCount {
+            let nextParentIndex = parentRowIndex.advanced(by: 1)
+            // Next child index is assumed to not be null
+            exclusiveEndChildIndex = try readNextChildIndex(nextParentIndex)!
+        } else {
+            // We are at the final row of the parent table; span to the end of the linked table
+            exclusiveEndChildIndex = Index(rawValue: childTable.rowCount + 1)!
         }
         
-        // If we reached the final row and found no non-null pointers,
-        // the run spans to the end of the linked table
-        let endIndexExclusive = nextListIndex ?? Index(rawValue: linkedTable.rowCount + 1)!
-        
-        // If `startListIndex == endIndexExclusive`, the range is empty (Count: 0)
-        return startListIndex..<endIndexExclusive
+        // If `startingChildIndex == exclusiveEndChildIndex`, the range is empty (Count: 0)
+        return startingChildIndex..<exclusiveEndChildIndex
     }
     
-    /// Finds the contiguous range of rows that match a target value
-    /// Used for reverse lookups of rows in other tables that link to a given row
-    func equalRange(in tableID: TableID, _ compare: (_ rowIndex: Index) throws -> Ordering) throws -> Range<Index> {
+    /// Finds the row in a parent table that owns a specific child row when the
+    /// parent table has a 'list column' (e.g. TypeDef.MethodList) that points
+    /// to a contiguous range of child rows.
+    func parentRow(
+        searchingParentTable parentTableID: TableID,
+        compareParentRow: (_ parentRowIndex: Index) throws -> Ordering
+    ) throws -> Index {
+        guard let parentTable = tables[parentTableID.rawValue] else {
+            throw MetadataFileError.missingTable
+        }
+        
+        let upperBound = try upperBound(
+            searchingTable: parentTableID,
+            zeroBasedFirstOffset: 0,
+            zeroBasedLastOffset: Int(parentTable.rowCount),
+            compareParentRow
+        )
+        
+        // `upperBound` is a 0-based offset, meaning the parent's 0-based index
+        // is `upperBound - 1`. However, to convert that 0-based index into the
+        // 1-based `Index` type, we must add 1. This cancels out, making
+        // `upperBound` the correct raw value for the index
+        return Index(rawValue: .init(upperBound))!
+    }
+    
+    /// Finds the contiguous range of row indices that match a target value
+    /// Used for finding all child rows that contain a direct foreign-key
+    /// pointer back to a parent row
+    /// (e.g. finding all CustomAttributes where the Parent column matches a specific TypeDef).
+    func equalRange(
+        searchingTable tableID: TableID,
+        compareRow: (_ rowIndex: Index) throws -> Ordering
+    ) throws -> Range<Index> {
         guard let table = tables[tableID.rawValue] else {
             throw MetadataFileError.missingTable
         }
@@ -161,7 +184,7 @@ public final class MetadataFile {
             // Convert 0-based math to 1-based Index
             let rowIndex = Index(rawValue: .init(middle + 1))!
             
-            let ordering = try compare(rowIndex)
+            let ordering = try compareRow(rowIndex)
             
             switch ordering {
             case .lessThan:
@@ -173,10 +196,20 @@ public final class MetadataFile {
                 
             case .equal:
                 // We found a match. Now we find the absolute first and last occurrences.
-                let firstMatch = try lowerBound(in: tableID, first: first, last: middle, compare)
+                let firstMatch = try lowerBound(
+                    searchingTable: tableID,
+                    zeroBasedFirstOffset: first,
+                    zeroBasedLastOffset: middle,
+                    compareRow
+                )
                 
                 // 'first + count' represents the upper bound of the current search space.
-                let lastMatch = try upperBound(in: tableID, first: middle + 1, last: first + count, compare)
+                let lastMatch = try upperBound(
+                    searchingTable: tableID,
+                    zeroBasedFirstOffset: middle + 1,
+                    zeroBasedLastOffset: first + count,
+                    compareRow
+                )
                 
                 let startIndex = Index(rawValue: .init(firstMatch + 1))!
                 let exclusiveEndIndex = Index(rawValue: .init(lastMatch + 1))!
@@ -190,12 +223,14 @@ public final class MetadataFile {
         return notFoundIndex..<notFoundIndex
     }
     
-    /// Finds the first element in the range [first, last) that is not strictly less than the target
+    /// Finds the first element in the 0-based range [first, last) that is NOT
+    /// strictly less than the target
+    /// - Returns: A 0-based integer offset representing the lower bound.
     private func lowerBound(
-        in tableID: TableID,
-        first: Int,
-        last: Int,
-        _ compare: (_ rowIndex: Index) throws -> Ordering
+        searchingTable tableID: TableID,
+        zeroBasedFirstOffset first: Int,
+        zeroBasedLastOffset last: Int,
+        _ compareRow: (_ rowIndex: Index) throws -> Ordering
     ) throws -> Int {
         // Binary search
         var first = first
@@ -205,9 +240,9 @@ public final class MetadataFile {
             let count2 = count / 2
             let middle = first + count2
             
+            // Pass the 1-based Index to the closure
             let rowIndex = Index(rawValue: .init(middle + 1))!
-            
-            let ordering = try compare(rowIndex)
+            let ordering = try compareRow(rowIndex)
             
             if ordering == .lessThan {
                 first = middle + 1
@@ -219,12 +254,14 @@ public final class MetadataFile {
         return first
     }
     
-    /// Finds the first element in the range [first, last) that is strictly greater than the target
+    /// Finds the first element in the range [first, last) that IS strictly
+    /// greater than the target
+    /// - Returns: A 0-based integer offset representing the upper bound.
     private func upperBound(
-        in tableID: TableID,
-        first: Int,
-        last: Int,
-        _ compare: (_ rowIndex: Index) throws -> Ordering
+        searchingTable tableID: TableID,
+        zeroBasedFirstOffset first: Int,
+        zeroBasedLastOffset last: Int,
+        _ compareRow: (_ rowIndex: Index) throws -> Ordering
     ) throws -> Int {
         // Binary search
         var first = first
@@ -234,9 +271,9 @@ public final class MetadataFile {
             let count2 = count / 2
             let middle = first + count2
             
+            // Pass the 1-based Index to the closure
             let rowIndex = Index(rawValue: .init(middle + 1))!
-            
-            let ordering = try compare(rowIndex)
+            let ordering = try compareRow(rowIndex)
             
             if ordering == .greaterThan {
                 count = count2

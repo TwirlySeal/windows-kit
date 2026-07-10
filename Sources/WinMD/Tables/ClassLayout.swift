@@ -15,14 +15,14 @@ struct ClassLayout {
         get throws { try .init(in: file, at: parentIndex) }
     }
     
-    static func equalRange(
-        in metadata: MetadataFile,
-        index: Index
+    static func rowRange(
+        forParent parentIndex: Index,
+        in metadata: MetadataFile
     ) throws -> Range<Index> {
-        try metadata.equalRange(in: .classLayout) { rowIndex in
+        try metadata.equalRange(searchingTable: .classLayout) { rowIndex in
             try ClassLayout(in: metadata, at: rowIndex)
                 .parentIndex
-                .compare(to: index)
+                .compare(to: parentIndex)
         }
     }
     

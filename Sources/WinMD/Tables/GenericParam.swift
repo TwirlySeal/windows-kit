@@ -28,25 +28,25 @@ struct GenericParam {
     
     var customAttributes: [CustomAttribute] {
         get throws {
-            try CustomAttribute.equalRange(
-                in: file,
+            try CustomAttribute.rowRange(
                 tag: .genericParam,
-                index: self.rowIndex
+                forParent: self.rowIndex,
+                in: file,
             ).map { index in
                 try CustomAttribute(in: file, at: index)
             }
         }
     }
     
-    static func equalRange(
-        in metadata: MetadataFile,
+    static func rowRange(
         tag: TypeOrMethodDef.Tag,
-        index: Index
+        forOwner ownerIndex: Index,
+        in file: MetadataFile
     ) throws -> Range<Index> {
-        let codedIndex = CodedIndex<TypeOrMethodDef.Tag>(tag: tag, index: index)
+        let codedIndex = CodedIndex<TypeOrMethodDef.Tag>(tag: tag, index: ownerIndex)
         
-        return try metadata.equalRange(in: .genericParam) { rowIndex in
-            try GenericParam(in: metadata, at: rowIndex)
+        return try file.equalRange(searchingTable: .genericParam) { rowIndex in
+            try GenericParam(in: file, at: rowIndex)
                 .ownerIndex
                 .compare(to: codedIndex)
         }

@@ -39,10 +39,10 @@ struct TypeDef {
             }
             
             let range = try file.listRowRange(
-                rowIndex: self.rowIndex,
-                startListIndex: fieldListIndex,
-                currentTable: .typeDef,
-                linkedTable: .field
+                forParentRow: self.rowIndex,
+                startingChildIndex: fieldListIndex,
+                parentTableID: .typeDef,
+                childTableID: .field
             ) { rowIndex in
                 try Self(in: file, at: rowIndex).fieldListIndex
             }
@@ -60,10 +60,10 @@ struct TypeDef {
             }
             
             let range = try file.listRowRange(
-                rowIndex: self.rowIndex,
-                startListIndex: methodListIndex,
-                currentTable: .typeDef,
-                linkedTable: .methodDef
+                forParentRow: self.rowIndex,
+                startingChildIndex: methodListIndex,
+                parentTableID: .typeDef,
+                childTableID: .methodDef
             ) { rowIndex in
                 try Self(in: file, at: rowIndex).methodListIndex
             }
@@ -76,7 +76,7 @@ struct TypeDef {
     
     var genericParams: [GenericParam] {
         get throws {
-            try GenericParam.equalRange(in: file, tag: .typeDef, index: self.rowIndex)
+            try GenericParam.rowRange(tag: .typeDef, forOwner: self.rowIndex, in: file)
                 .map { index in
                     try GenericParam(in: file, at: index)
                 }
@@ -85,7 +85,7 @@ struct TypeDef {
     
     var interfaceImpls: [InterfaceImpl] {
         get throws {
-            try InterfaceImpl.equalRange(in: file, index: self.rowIndex)
+            try InterfaceImpl.rowRange(forOwner: self.rowIndex, in: file)
                 .map { index in
                     try InterfaceImpl(in: file, at: index)
                 }
@@ -94,7 +94,7 @@ struct TypeDef {
     
     var classLayout: ClassLayout? {
         get throws {
-            try ClassLayout.equalRange(in: file, index: self.rowIndex)
+            try ClassLayout.rowRange(forParent: self.rowIndex, in: file)
                 .first
                 .map { index in
                     try ClassLayout(in: file, at: index)
@@ -104,10 +104,10 @@ struct TypeDef {
     
     var customAttributes: [CustomAttribute] {
         get throws {
-            try CustomAttribute.equalRange(
-                in: file,
+            try CustomAttribute.rowRange(
                 tag: .typeDef,
-                index: self.rowIndex
+                forParent: self.rowIndex,
+                in: file
             ).map { index in
                 try CustomAttribute(in: file, at: index)
             }
@@ -149,6 +149,14 @@ struct TypeDef {
             default:
                 .class
             }
+        }
+    }
+    
+    /// Get the index of the `TypeDef` that is the parent of a `MethodDef` at `index`
+    static func parentOfMethod(at index: Index, in file: MetadataFile) throws -> Index {
+        try file.parentRow(searchingParentTable: .typeDef) { rowIndex in
+            try TypeDef(in: file, at: rowIndex)
+                .methodListIndex!.compare(to: index)
         }
     }
     

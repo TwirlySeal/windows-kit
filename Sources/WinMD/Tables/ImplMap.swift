@@ -26,15 +26,15 @@ struct ImplMap {
         get throws { try .init(in: file, at: importScopeIndex) }
     }
     
-    static func equalRange(
-        in metadata: MetadataFile,
+    static func rowRange(
         tag: MemberForwarded.Tag,
-        index: Index
+        forOwner ownerIndex: Index,
+        in file: MetadataFile
     ) throws -> Range<Index> {
-        let codedIndex = CodedIndex<MemberForwarded.Tag>(tag: tag, index: index)
+        let codedIndex = CodedIndex<MemberForwarded.Tag>(tag: tag, index: ownerIndex)
         
-        return try metadata.equalRange(in: .implMap) { rowIndex in
-            try ImplMap(in: metadata, at: rowIndex)
+        return try file.equalRange(searchingTable: .implMap) { rowIndex in
+            try ImplMap(in: file, at: rowIndex)
                 .memberForwardedIndex
                 .compare(to: codedIndex)
         }

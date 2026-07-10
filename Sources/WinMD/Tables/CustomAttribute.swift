@@ -46,15 +46,15 @@ struct CustomAttribute {
         }
     }
     
-    static func equalRange(
-        in metadata: MetadataFile,
+    static func rowRange(
         tag: HasCustomAttribute.Tag,
-        index: Index
+        forParent parentIndex: Index,
+        in file: MetadataFile
     ) throws -> Range<Index> {
-        let codedIndex = CodedIndex<HasCustomAttribute.Tag>(tag: tag, index: index)
+        let codedIndex = CodedIndex<HasCustomAttribute.Tag>(tag: tag, index: parentIndex)
         
-        return try metadata.equalRange(in: .customAttribute) { rowIndex in
-            try CustomAttribute(in: metadata, at: rowIndex)
+        return try file.equalRange(searchingTable: .customAttribute) { rowIndex in
+            try CustomAttribute(in: file, at: rowIndex)
                 .parentIndex
                 .compare(to: codedIndex)
         }
