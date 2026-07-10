@@ -60,6 +60,18 @@ struct CustomAttribute {
         }
     }
     
+    public static func findAttribute(attributes: [CustomAttribute], name: String) throws -> CustomAttribute? {
+        try attributes.first { attribute in
+            try attribute.type.parent.name == name
+        }
+    }
+    
+    public static func hasAttribute(attributes: [CustomAttribute], name: String) throws -> Bool {
+        try attributes.contains { attribute in
+            try attribute.type.parent.name == name
+        }
+    }
+    
     private init(in file: MetadataFile, parsing span: inout ParserSpan) throws {
         self.file = file
         

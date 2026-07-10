@@ -101,6 +101,10 @@ public struct MetadataDB {
         return name
     }
     
+    var allTypes: some Sequence<(namespace: String, name: Substring, typeDef: TypeDef)> {
+        Self.typeSequence(self.types)
+    }
+    
     private static func typeSequence(
         _ types: [String: [Substring: [TypeDef]]]
     ) -> some Sequence<(namespace: String, name: Substring, typeDef: TypeDef)> {

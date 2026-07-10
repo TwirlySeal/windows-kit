@@ -2,6 +2,28 @@ enum MemberRefParent {
     case typeDef(TypeDef)
     case typeRef(TypeRef)
     
+    var name: String {
+        get throws {
+            switch self {
+            case .typeDef(let typeDef):
+                try typeDef.name
+            case .typeRef(let typeRef):
+                try typeRef.name
+            }
+        }
+    }
+    
+    var namespace: String {
+        get throws {
+            switch self {
+            case .typeDef(let typeDef):
+                try typeDef.namespace
+            case .typeRef(let typeRef):
+                try typeRef.namespace
+            }
+        }
+    }
+    
     init(in file: MetadataFile, at index: CodedIndex<Tag>) throws {
         switch index.tag {
         case .typeDef:
