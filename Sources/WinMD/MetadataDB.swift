@@ -1,21 +1,13 @@
-enum Item {
-    case type(TypeDef)
-    case function(MethodDef)
-    case const(Field)
-}
-
 public struct MetadataDB {
-    let files: [MetadataFile]
+    /// namespace -> name -> [TypeDef]
+    public let types: [String: [String: [TypeDef]]]
     
-    // namespace -> item name -> [Item]
-    private let items: [String: [String: [Item]]]
-    
-    // parent -> children
-    private let nested: [TypeDef: [TypeDef]]
+    /// parent -> children
+    public let nested: [TypeDef: [TypeDef]]
     
     // Removes the generic arity suffix (e.g. `1, `2) from type names, which
     // indicates the number of generic parameters
-    static func trimGenericArity(_ name: Substring) -> Substring {
+    public static func trimGenericArity(_ name: Substring) -> Substring {
         if let index = name.firstIndex(of: "`") {
             return name[..<index]
         }
@@ -23,9 +15,7 @@ public struct MetadataDB {
     }
     
     public init(files: [MetadataFile]) throws {
-        self.files = files
-        
-        var items: [String: [String: [Item]]] = [:]
+        var types: [String: [String: [TypeDef]]] = [:]
         var nested: [TypeDef: [TypeDef]] = [:]
         
         for file in files {
@@ -40,29 +30,9 @@ public struct MetadataDB {
                 
                 let name = try typeDef.name
                 let cleanName = Self.trimGenericArity(name[...])
-                let category = try typeDef.category
                 
-                // The "Apis" class is used for Win32 metadata
-                let isApisClass = (
-                    !typeDef.flags.implementation.contains(.windowsRuntime)
-                    && category == .class && name == "Apis"
-                )
-                
-                if isApisClass {
-                    // Extract Win32 APIs
-                    for method in try typeDef.methods {
-                        items[namespace, default: [:]][try method.name, default: []]
-                            .append(.function(method))
-                    }
-                    
-                    for field in try typeDef.fields {
-                        items[namespace, default: [:]][try field.name, default: []]
-                            .append(.const(field))
-                    }
-                } else {
-                    items[namespace, default: [:]][String(cleanName), default: []]
-                        .append(.type(typeDef))
-                }
+                types[namespace, default: [:]][String(cleanName), default: []]
+                    .append(typeDef)
             }
             
             for index in try file.tableRange(in: .nestedClass) {
@@ -75,6 +45,6 @@ public struct MetadataDB {
             }
         }
         self.nested = nested
-        self.items = items
+        self.types = types
     }
 }

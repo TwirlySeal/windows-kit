@@ -46,6 +46,12 @@ struct CustomAttribute {
         }
     }
     
+    public var name: String {
+        get throws {
+            try type.parent.name
+        }
+    }
+    
     static func rowRange(
         tag: HasCustomAttribute.Tag,
         forParent parentIndex: Index,
@@ -57,18 +63,6 @@ struct CustomAttribute {
             try CustomAttribute(in: file, at: rowIndex)
                 .parentIndex
                 .compare(to: codedIndex)
-        }
-    }
-    
-    public static func findAttribute(attributes: [CustomAttribute], name: String) throws -> CustomAttribute? {
-        try attributes.first { attribute in
-            try attribute.type.parent.name == name
-        }
-    }
-    
-    public static func hasAttribute(attributes: [CustomAttribute], name: String) throws -> Bool {
-        try attributes.contains { attribute in
-            try attribute.type.parent.name == name
         }
     }
     

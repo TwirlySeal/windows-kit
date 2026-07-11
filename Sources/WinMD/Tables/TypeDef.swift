@@ -5,7 +5,7 @@ enum TypeDefError: Error {
     case invalidExtends
 }
 
-struct TypeDef {
+public struct TypeDef {
     private let file: MetadataFile
     private let rowIndex: Index
     
@@ -187,7 +187,7 @@ struct TypeDef {
 }
 
 extension TypeDef: Equatable {
-    static func == (lhs: TypeDef, rhs: TypeDef) -> Bool {
+    public static func == (lhs: TypeDef, rhs: TypeDef) -> Bool {
         // Both must reside in the same file instance and point to the same row
         // index
         lhs.file === rhs.file && lhs.rowIndex == rhs.rowIndex
@@ -195,7 +195,7 @@ extension TypeDef: Equatable {
 }
 
 extension TypeDef: Hashable {
-    func hash(into hasher: inout Hasher) {
+    public func hash(into hasher: inout Hasher) {
         // Combine the memory address of the file class instance
         hasher.combine(ObjectIdentifier(file))
         // Combine the unique row index value
