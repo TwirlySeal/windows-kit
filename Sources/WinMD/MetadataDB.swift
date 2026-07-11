@@ -44,7 +44,7 @@ public struct MetadataDB {
                 
                 // The "Apis" class is used for Win32 metadata
                 let isApisClass = (
-                    typeDef.flags.implementation.contains(.windowsRuntime)
+                    !typeDef.flags.implementation.contains(.windowsRuntime)
                     && category == .class && name == "Apis"
                 )
                 
