@@ -1,8 +1,3 @@
-enum MetadataError: Error {
-    case notFound(namespace: String, name: String)
-    case ambiguous(namespace: String, name: String)
-}
-
 enum Item {
     case type(TypeDef)
     case function(MethodDef)
