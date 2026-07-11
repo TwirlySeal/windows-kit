@@ -53,6 +53,8 @@ and are distributed via NuGet packages:
 
   - This package includes both the metadata and C++ implementation
 
+  - Some C, C++, and COM APIs without WinRT metadata are also included
+
 We can download and parse these files to generate C/C++ headers that define the
 APIs and hide the ABI details. These headers will include Clang attributes that
 allow the Swift compiler to import the APIs with a more Swift-friendly
