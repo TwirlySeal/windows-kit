@@ -140,6 +140,9 @@ public struct Constant {
             throw ConstantError.invalidType
         }
         
+        // Skip padding zero
+        try span.seek(toRelativeOffset: 1)
+        
         guard let parentIndex = try CodedIndex<HasConstant.Tag>(
             parsing: &span,
             size: file.codedIndexSizes.hasConstant
