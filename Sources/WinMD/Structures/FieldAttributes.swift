@@ -1,5 +1,5 @@
-struct FieldAttributes {
-    typealias RawValue = UInt16
+public struct FieldAttributes {
+    public typealias RawValue = UInt16
     
     enum Access: RawValue, Maskable {
         static let mask: RawValue = 0x0007
@@ -13,12 +13,16 @@ struct FieldAttributes {
         case `public` = 0x0006
     }
     
-    struct Flags: OptionSet {
-        let rawValue: RawValue
+    public struct Flags: OptionSet, Sendable {
+        public let rawValue: RawValue
+        
+        public init(rawValue: RawValue) {
+            self.rawValue = rawValue
+        }
         
         static let `static` = Self(rawValue: 0x0010)
         static let initOnly = Self(rawValue: 0x0020)
-        static let literal = Self(rawValue: 0x0040)
+        public static let literal = Self(rawValue: 0x0040)
         static let notSerialised = Self(rawValue: 0x0080)
         static let specialName = Self(rawValue: 0x0200)
         
@@ -33,7 +37,7 @@ struct FieldAttributes {
     private let rawValue: RawValue
     
     let access: Access
-    var flags: Flags {
+    public var flags: Flags {
         .init(rawValue: rawValue)
     }
     

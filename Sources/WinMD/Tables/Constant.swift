@@ -5,14 +5,14 @@ enum ConstantError: Error {
     case missingParent
 }
 
-struct Constant {
+public struct Constant {
     private let file: MetadataFile
     
-    let type: ConstantType
+    public let type: ConstantType
     private let parentIndex: CodedIndex<HasConstant.Tag>
     private let valueIndex: HeapIndex
     
-    enum ConstantType {
+    public enum ConstantType {
         case int8
         case uint8
         case int16
@@ -26,7 +26,7 @@ struct Constant {
         case string
     }
     
-    enum ConstantValue {
+    public enum ConstantValue {
         case int8(Int8)
         case uint8(UInt8)
         case int16(Int16)
@@ -44,7 +44,21 @@ struct Constant {
         get throws { try .init(in: file, at: parentIndex) }
     }
     
-    var value: ConstantValue {
+    static func rowRange(
+        tag: HasConstant.Tag,
+        forParent parentIndex: Index,
+        in file: MetadataFile
+    ) throws -> Range<Index> {
+        let codedIndex = CodedIndex<HasConstant.Tag>(tag: tag, index: parentIndex)
+        
+        return try file.equalRange(searchingTable: .constant) { rowIndex in
+            try Constant(in: file, at: rowIndex)
+                .parentIndex
+                .compare(to: codedIndex)
+        }
+    }
+    
+    public var value: ConstantValue {
         get throws {
             try file.withBlobSpan(at: valueIndex) { span in
                 switch self.type {

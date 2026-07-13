@@ -1,5 +1,5 @@
-struct TypeAttributes {
-    typealias RawValue = UInt32
+public struct TypeAttributes {
+    public typealias RawValue = UInt32
     
 	enum Visibility: RawValue, Maskable {
 		static let mask: RawValue = 0x00000007
@@ -37,15 +37,19 @@ struct TypeAttributes {
 		static let specialName = Self(rawValue: 0x00000400)
 	}
 
-	struct Implementation: OptionSet {
-		let rawValue: RawValue
+	public struct Implementation: OptionSet, Sendable {
+		public let rawValue: RawValue
+        
+        public init(rawValue: RawValue) {
+            self.rawValue = rawValue
+        }
 
 		static let `import` = Self(rawValue: 0x00001000)
 		static let serializable = Self(rawValue: 0x00002000)
         
         /// Represents the `tdWindowsRuntime` flag which isn't defined in
         /// ECMA-335 and is specific to Windows Metadata
-        static let windowsRuntime = Self(rawValue: 0x00004000)
+        public static let windowsRuntime = Self(rawValue: 0x00004000)
 	}
 
 	enum StringFormatting: RawValue, Maskable {
@@ -73,7 +77,7 @@ struct TypeAttributes {
 	let classLayout: ClassLayout
 	let classSemantics: ClassSemantics
 	var specialSemantics: SpecialSemantics { .init(rawValue: rawValue) }
-	var implementation: Implementation { .init(rawValue: rawValue) }
+	public var implementation: Implementation { .init(rawValue: rawValue) }
 	let stringFormatting: StringFormatting
 	var flags: Flags { .init(rawValue: rawValue) }
 

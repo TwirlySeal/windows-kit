@@ -9,14 +9,14 @@ public struct TypeDef {
     private let file: MetadataFile
     private let rowIndex: Index
     
-    let flags: TypeAttributes
+    public let flags: TypeAttributes
     private let typeNameIndex: HeapIndex
     private let typeNamespaceIndex: HeapIndex
     private let extendsIndex: CodedIndex<TypeDefOrRef.Tag>?
     private let fieldListIndex: Index?
     private let methodListIndex: Index?
     
-    var name: String {
+    public var name: String {
         get throws { try file.string(at: typeNameIndex) }
     }
     
@@ -32,7 +32,7 @@ public struct TypeDef {
         }
     }
     
-    var fields: [Field] {
+    public var fields: [Field] {
         get throws {
             guard let fieldListIndex else {
                 return []
@@ -53,7 +53,7 @@ public struct TypeDef {
         }
     }
     
-    var methods: [MethodDef] {
+    public var methods: [MethodDef] {
         get throws {
             guard let methodListIndex else {
                 return []
@@ -114,7 +114,7 @@ public struct TypeDef {
         }
     }
     
-    enum Category {
+    public enum Category {
         case `enum`
         case delegate
         case `struct`
@@ -123,7 +123,7 @@ public struct TypeDef {
         case interface
     }
     
-    var category: Category {
+    public var category: Category {
         get throws {
             guard let extends = try extends else {
                 return .interface

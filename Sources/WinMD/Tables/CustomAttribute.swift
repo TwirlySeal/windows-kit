@@ -7,7 +7,7 @@ enum CustomAttributeError: Error {
     case nonVoidReturnType
 }
 
-struct CustomAttribute {
+public struct CustomAttribute {
     private let file: MetadataFile
     
     private let parentIndex: CodedIndex<HasCustomAttribute.Tag>
@@ -43,12 +43,6 @@ struct CustomAttribute {
             }
             
             return try .init(in: file, at: valueIndex, params: methodDefSig.params)
-        }
-    }
-    
-    public var name: String {
-        get throws {
-            try type.parent.name
         }
     }
     

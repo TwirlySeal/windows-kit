@@ -13,6 +13,7 @@ let package = Package(
     dependencies: [
         .package(url: "https://github.com/apple/swift-binary-parsing", "0.0.1"..<"0.1.0"),
         .package(url: "https://github.com/apple/swift-algorithms", from: "1.2.1"),
+        .package(url: "https://github.com/swiftlang/swift-syntax.git", from: "602.0.0"),
     ],
 
     targets: [
@@ -20,7 +21,9 @@ let package = Package(
             name: "Generator",
             dependencies: [
                 .target(name: "WinMD"),
-                .target(name: "Zip")
+                .target(name: "Zip"),
+                .product(name: "SwiftSyntax", package: "swift-syntax"),
+                .product(name: "SwiftSyntaxBuilder", package: "swift-syntax"),
             ]
         ),
         .target(

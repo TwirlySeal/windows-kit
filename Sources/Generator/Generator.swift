@@ -6,7 +6,18 @@ import WinMD
 struct Generator {
     static func main() async throws {
         // Test MetadataDB
-        _ = try await getDatabase()
+        let database = try await getDatabase()
+        
+        for (namespace, namespaceTypes) in database.types {
+            for (name, types) in namespaceTypes {
+                for type in types {
+                    if try type.category == .enum {
+                        try write(type: type)
+                        return
+                    }
+                }
+            }
+        }
     }
     
     static let packageID = "Microsoft.Windows.SDK.Contracts"

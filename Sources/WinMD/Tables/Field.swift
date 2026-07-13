@@ -4,15 +4,15 @@ enum FieldError: Error {
     case invalidFieldAttributes
 }
 
-struct Field {
+public struct Field {
     private let file: MetadataFile
     private let rowIndex: Index
     
-    let flags: FieldAttributes
+    public let flags: FieldAttributes
     private let nameIndex: HeapIndex
     private let signatureIndex: HeapIndex
     
-    var name: String {
+    public var name: String {
         get throws { try file.string(at: nameIndex) }
     }
     
@@ -28,6 +28,18 @@ struct Field {
                 in: file
             ).map { index in
                 try CustomAttribute(in: file, at: index)
+            }
+        }
+    }
+    
+    public var constant: Constant? {
+        get throws {
+            try Constant.rowRange(
+                tag: .field,
+                forParent: self.rowIndex,
+                in: file
+            ).first.map { index in
+                try Constant(in: file, at: index)
             }
         }
     }
