@@ -2,12 +2,12 @@ enum TypeDefOrRefError: Error {
     case disallowedTypeSpec
 }
 
-enum TypeDefOrRef {
+public enum TypeDefOrRef {
     case typeDef(TypeDef)
     case typeRef(TypeRef)
     case typeSpec(TypeSpec)
     
-    var name: String {
+    public var name: String {
         get throws {
             switch self {
             case .typeDef(let typeDef):
@@ -20,7 +20,7 @@ enum TypeDefOrRef {
         }
     }
     
-    var namespace: String {
+    public var namespace: String {
         get throws {
             switch self {
             case .typeDef(let typeDef):

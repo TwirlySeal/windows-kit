@@ -1,11 +1,11 @@
 import BinaryParsing
 
 public struct FieldSig {
-    let customModifiers: [CustomMod]
+    public let customModifiers: [CustomMod]
     public let type: Type
     
     private init(parsing span: inout ParserSpan, in file: MetadataFile) throws {
-        self.customModifiers = try CustomMod.parseZeroOrMore(from: &span)
+        self.customModifiers = try CustomMod.parseZeroOrMore(from: &span, in: file)
         self.type = try Type(parsing: &span, in: file)
     }
     

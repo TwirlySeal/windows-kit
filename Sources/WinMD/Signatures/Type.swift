@@ -44,7 +44,7 @@ public enum Type {
             self.index = index
         }
         
-        var value: TypeDefOrRef {
+        public var value: TypeDefOrRef {
             get throws {
                 try .init(in: file, at: index)
             }
@@ -94,16 +94,16 @@ public enum Type {
     }
     
     public struct Pointer {
-        let customModifiers: [CustomMod]
-        let pointee: Pointee
+        public let customModifiers: [CustomMod]
+        public let pointee: Pointee
         
-        enum Pointee {
+        public enum Pointee {
             case type(Type)
             case void
         }
         
         init(parsing span: inout ParserSpan, in file: MetadataFile) throws {
-            self.customModifiers = try CustomMod.parseZeroOrMore(from: &span)
+            self.customModifiers = try CustomMod.parseZeroOrMore(from: &span, in: file)
             
             var copySpan = ParserSpan(span.bytes)
             if try UInt8(parsing: &copySpan) == ElementType.void {
@@ -184,7 +184,7 @@ public enum Type {
             self = .string
             
         case ElementType.szArray:
-            let customMods = try CustomMod.parseZeroOrMore(from: &span)
+            let customMods = try CustomMod.parseZeroOrMore(from: &span, in: file)
             let type = try Type(parsing: &span, in: file)
             self = .vector(modifiers: customMods, element: type)
             

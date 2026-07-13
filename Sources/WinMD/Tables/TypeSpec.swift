@@ -1,6 +1,6 @@
 import BinaryParsing
 
-struct TypeSpec {
+public struct TypeSpec {
     private let file: MetadataFile
     private let rowIndex: Index
     
