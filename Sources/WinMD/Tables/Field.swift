@@ -16,7 +16,7 @@ public struct Field {
         get throws { try file.string(at: nameIndex) }
     }
     
-    var signature: FieldSig {
+    public var signature: FieldSig {
         get throws { try .init(in: file, at: signatureIndex) }
     }
     

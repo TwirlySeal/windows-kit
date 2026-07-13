@@ -95,6 +95,46 @@ enum EnumError: Error {
     case missingCaseConstant
 }
 
+extension Type {
+    var swiftTypeName: String {
+        switch self {
+        case .boolean: "Bool"
+        case .char: fatalError() // Character?
+        case .int8: "Int8"
+        case .uint8: "UInt8"
+        case .int16: "Int16"
+        case .uint16: "UInt16"
+        case .int32: "Int32"
+        case .uint32: "UInt32"
+        case .int64: "Int64"
+        case .uint64: "UInt64"
+        case .float32: "Float"
+        case .float64: "Double"
+        case .int: "Int"
+        case .uint: "UInt"
+        case .object: fatalError()
+        case .string: "String"
+            
+        case .array(let element, let shape):
+            fatalError()
+        case .class(let type):
+            fatalError()
+        case .enum(let name):
+            fatalError()
+        case .genericInstance(let genericInstance):
+            fatalError()
+        case .genericTypeParameter(let index):
+            fatalError()
+        case .pointer(let pointer):
+            fatalError()
+        case .vector(let modifiers, let element):
+            fatalError()
+        case .valueType(let type):
+            fatalError()
+        }
+    }
+}
+
 // See ECMA-335 - §II.14.3 Enums
 func write(winRTEnum type: TypeDef) throws {
     let name = try type.name
@@ -106,6 +146,7 @@ func write(winRTEnum type: TypeDef) throws {
     guard let valueField = fields.first else {
         throw EnumError.missingValueField
     }
+    let underlyingType = try valueField.signature.type
     
     let enumAttributes = try type.customAttributes
     if try hasAttribute(enumAttributes, namespace: "System", name: "FlagsAttribute") {
@@ -140,7 +181,7 @@ func write(winRTEnum type: TypeDef) throws {
     let decl = EnumDeclSyntax(
         name: .identifier(name),
         inheritanceClause: InheritanceClauseSyntax {
-            InheritedTypeSyntax(type: IdentifierTypeSyntax(name: .identifier("Int")))
+            InheritedTypeSyntax(type: IdentifierTypeSyntax(name: .identifier(underlyingType.swiftTypeName)))
         }
     ) {
         MemberBlockItemSyntax(decl: EnumCaseDeclSyntax {

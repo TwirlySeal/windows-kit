@@ -1,6 +1,6 @@
 import BinaryParsing
 
-struct CustomMod {
+public struct CustomMod {
     let required: Bool
     let typeIndex: CodedIndex<TypeDefOrRef.Tag>
     

@@ -6,7 +6,7 @@ enum TypeError: Error {
     case nullTypeIndex
 }
 
-enum Type {
+public enum Type {
     case boolean
     case char
     case int8
@@ -35,7 +35,7 @@ enum Type {
     indirect case vector(modifiers: [CustomMod], element: Type)
     case valueType(type: LazyTypeDefOrRef)
     
-    struct LazyTypeDefOrRef {
+    public struct LazyTypeDefOrRef {
         let file: MetadataFile
         let index: CodedIndex<TypeDefOrRef.Tag>
         
@@ -51,7 +51,7 @@ enum Type {
         }
     }
     
-    struct GenericInstance {
+    public struct GenericInstance {
         enum Kind {
             case `class`
             case valueType
@@ -93,7 +93,7 @@ enum Type {
         }
     }
     
-    struct Pointer {
+    public struct Pointer {
         let customModifiers: [CustomMod]
         let pointee: Pointee
         

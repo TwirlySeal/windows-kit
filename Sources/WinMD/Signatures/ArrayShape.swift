@@ -1,6 +1,6 @@
 import BinaryParsing
 
-struct ArrayShape {
+public struct ArrayShape {
     /// Number of dimensions in the array
     let rank: UInt32
     let sizes: [UInt32]
