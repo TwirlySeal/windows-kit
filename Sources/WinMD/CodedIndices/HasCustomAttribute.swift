@@ -1,3 +1,7 @@
+enum HasCustomAttributeError: Error {
+    case unsupportedTable
+}
+
 enum HasCustomAttribute {
     case methodDef(MethodDef)
     case field(Field)
@@ -55,6 +59,11 @@ enum HasCustomAttribute {
             self = .genericParam(
                 try GenericParam(in: file, at: index.index)
             )
+        case .property:
+            // An index of this case will never be resolved by the projection
+            // generator, but the tag must be allowed to successfully parse
+            // rows in the `CustomAttribute` table.
+            throw HasCustomAttributeError.unsupportedTable
         }
     }
     
@@ -93,7 +102,7 @@ enum HasCustomAttribute {
         case memberRef = 6
 //        case module = 7
 //        case permission = 8 // this does not correspond to a table
-//        case property = 9
+        case property = 9
 //        case event = 10
 //        case standAloneSig = 11
 //        case moduleRef = 12
