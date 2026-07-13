@@ -1,8 +1,8 @@
-enum CustomAttributeType {
+public enum CustomAttributeType {
     case methodDef(MethodDef)
     case memberRef(MemberRef)
     
-    var parent: MemberRefParent {
+    public var parent: MemberRefParent {
         get throws {
             switch self {
             case .memberRef(let memberRef):

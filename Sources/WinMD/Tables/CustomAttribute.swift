@@ -20,7 +20,7 @@ public struct CustomAttribute {
         }
     }
     
-    var type: CustomAttributeType {
+    public var type: CustomAttributeType {
         get throws {
             try .init(in: file, at: typeIndex)
         }

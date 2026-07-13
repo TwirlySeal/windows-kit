@@ -79,6 +79,17 @@ extension Constant.ConstantValue {
     }
 }
 
+func hasAttribute(
+    _ attributes: [CustomAttribute],
+    namespace: String,
+    name: String
+) throws -> Bool {
+    try attributes.contains { attribute in
+        let parent = try attribute.type.parent
+        return try parent.name == name && parent.namespace == namespace
+    }
+}
+
 enum EnumError: Error {
     case missingValueField
     case missingCaseConstant
@@ -94,6 +105,11 @@ func write(winRTEnum type: TypeDef) throws {
     // enumeration. It is the first field.
     guard let valueField = fields.first else {
         throw EnumError.missingValueField
+    }
+    
+    let enumAttributes = try type.customAttributes
+    if try hasAttribute(enumAttributes, namespace: "System", name: "FlagsAttribute") {
+        print("OptionSet")
     }
     
     var cases = [EnumCaseElementSyntax]()

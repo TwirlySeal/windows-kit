@@ -102,7 +102,7 @@ public struct TypeDef {
         }
     }
     
-    var customAttributes: [CustomAttribute] {
+    public var customAttributes: [CustomAttribute] {
         get throws {
             try CustomAttribute.rowRange(
                 tag: .typeDef,

@@ -1,8 +1,8 @@
-enum MemberRefParent {
+public enum MemberRefParent {
     case typeDef(TypeDef)
     case typeRef(TypeRef)
     
-    var name: String {
+    public var name: String {
         get throws {
             switch self {
             case .typeDef(let typeDef):
@@ -13,7 +13,7 @@ enum MemberRefParent {
         }
     }
     
-    var namespace: String {
+    public var namespace: String {
         get throws {
             switch self {
             case .typeDef(let typeDef):

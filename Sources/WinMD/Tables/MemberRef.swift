@@ -4,7 +4,7 @@ enum MemberRefError: Error {
     case missingClass
 }
 
-struct MemberRef {
+public struct MemberRef {
     private let file: MetadataFile
     private let rowIndex: Index
     
