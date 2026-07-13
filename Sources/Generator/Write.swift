@@ -184,12 +184,7 @@ func write(winRTEnum type: TypeDef) throws {
         precedingModifiers: signature.customModifiers
     )
     
-    let enumAttributes = try type.customAttributes
-    if try hasAttribute(enumAttributes, namespace: "System", name: "FlagsAttribute") {
-        print("OptionSet")
-    }
-    
-    var cases = [EnumCaseElementSyntax]()
+    var cases = [(name: String, value: String)]()
     for field in fields {
         // All other fields are static and literal and declare the mapping of
         // the symbols of the enum to the underlying value
@@ -204,26 +199,37 @@ func write(winRTEnum type: TypeDef) throws {
         }
         let value = try constant.value
         
-        cases.append(
-            EnumCaseElementSyntax(
-                name: .identifier(try field.name),
-                rawValue: InitializerClauseSyntax(
-                    value: ExprSyntax(stringLiteral: value.literalStringValue)
-                )
-            )
+        cases.append((try field.name, value.literalStringValue))
+    }
+    
+    let decl: DeclSyntax
+    
+    let enumAttributes = try type.customAttributes
+    if try hasAttribute(enumAttributes, namespace: "System", name: "FlagsAttribute") {
+        decl = DeclSyntax(
+            try StructDeclSyntax("struct \(raw: name): OptionSet") {
+                try VariableDeclSyntax("let rawValue: \(raw: underlyingTypeName)")
+                
+                for item in cases {
+                    try VariableDeclSyntax("static let \(raw: item.name) = Self(\(raw: item.value))")
+                }
+            }
+        )
+    } else {
+        decl = DeclSyntax(
+            EnumDeclSyntax(name: .identifier(name)) {
+                MemberBlockItemSyntax(decl: EnumCaseDeclSyntax {
+                    for (name, value) in cases {
+                        EnumCaseElementSyntax(
+                            name: .identifier(name),
+                            rawValue: InitializerClauseSyntax(value: ExprSyntax(stringLiteral: value))
+                        )
+                    }
+                })
+            }
         )
     }
     
-    let decl = EnumDeclSyntax(
-        name: .identifier(name),
-        inheritanceClause: InheritanceClauseSyntax {
-            InheritedTypeSyntax(type: IdentifierTypeSyntax(name: .identifier(underlyingTypeName)))
-        }
-    ) {
-        MemberBlockItemSyntax(decl: EnumCaseDeclSyntax {
-            cases
-        })
-    }
     print(decl.formatted().description)
 }
 

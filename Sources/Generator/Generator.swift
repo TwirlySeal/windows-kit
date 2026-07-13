@@ -11,7 +11,8 @@ struct Generator {
         for (namespace, namespaceTypes) in database.types {
             for (name, types) in namespaceTypes {
                 for type in types {
-                    if try type.category == .enum {
+                    let attributes = try type.customAttributes
+                    if try type.category == .enum && hasAttribute(attributes, namespace: "System", name: "FlagsAttribute") {
                         try write(type: type)
                         return
                     }
