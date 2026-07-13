@@ -98,9 +98,9 @@ extension Type {
         case .boolean: return "Bool"
         case .char:
             // .NET `char` is a 16-bit UTF-16 code unit. Swift's `Character`
-            // is a grapheme cluster, and `CChar` is 8-bit. `UInt16` is the
-            // safest, most accurate mapping.
-            return "UInt16"
+            // is a grapheme cluster, and `CChar` is 8-bit. This type is a
+            // typealias for `UInt16`.
+            return "Unicode.UTF16.CodeUnit"
         case .int8: return "Int8"
         case .uint8: return "UInt8"
         case .int16: return "Int16"
