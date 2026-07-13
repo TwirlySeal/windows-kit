@@ -10,19 +10,19 @@ struct RetType {
         case void
     }
     
-    init(parsing span: inout ParserSpan) throws {
+    init(parsing span: inout ParserSpan, in file: MetadataFile) throws {
         self.customModifiers = try CustomMod.parseZeroOrMore(from: &span)
         
         var copySpan = ParserSpan(span.bytes)
         switch try UInt8(parsing: &copySpan) {
         case ElementType.byRef:
             span = copySpan
-            self.kind = .byRef(try Type(parsing: &span))
+            self.kind = .byRef(try Type(parsing: &span, in: file))
         case ElementType.void:
             span = copySpan
             self.kind = .void
         default:
-            self.kind = .type(try Type(parsing: &span))
+            self.kind = .type(try Type(parsing: &span, in: file))
         }
     }
 }

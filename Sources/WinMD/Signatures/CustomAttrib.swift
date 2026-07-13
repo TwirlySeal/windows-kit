@@ -33,7 +33,7 @@ struct CustomAttrib {
         let numNamed = try UInt16(parsingLittleEndian: &span)
         for _ in 0..<numNamed {
             _ = try ArgumentKind(parsing: &span)
-            let type = try Type(parsing: &span)
+            let type = try Type(parsing: &span, in: file)
             let name = try MetadataFile.serString(parsing: &span)
             let value = try Value(in: file, parsing: &span, type: type)
             
@@ -118,8 +118,9 @@ struct CustomAttrib {
             case .string:
                 self = .string(try MetadataFile.serString(parsing: &span))
                 
-            case .class(let index):
-                let (namespace, name) = try Self.getName(in: file, index: index)
+            case .class(let lazyTypeDefOrRef):
+                let typeDefOrRef = try lazyTypeDefOrRef.value
+                let (namespace, name) = try Self.getName(in: file, type: typeDefOrRef)
                 
                 if namespace == "System" && name == "Type" {
                     self = .type(name: try MetadataFile.serString(parsing: &span))
@@ -130,8 +131,9 @@ struct CustomAttrib {
                     )
                 }
                 
-            case .valueType(let index):
-                let (namespace, name) = try Self.getName(in: file, index: index)
+            case .valueType(let lazyTypeDefOrRef):
+                let typeDefOrRef = try lazyTypeDefOrRef.value
+                let (namespace, name) = try Self.getName(in: file, type: typeDefOrRef)
                 self = .enumValue(
                     name: Self.getFullName(namespace, name),
                     value: try Int32(parsingLittleEndian: &span)
@@ -150,12 +152,10 @@ struct CustomAttrib {
         
         static func getName(
             in file: MetadataFile,
-            index: CodedIndex<TypeDefOrRef.Tag>
+            type: TypeDefOrRef
         ) throws -> (namespace: String, name: String) {
-            let typeDefOrRef = try TypeDefOrRef(in: file, at: index)
-            
-            let namespace = try typeDefOrRef.namespace
-            let name = try typeDefOrRef.name
+            let namespace = try type.namespace
+            let name = try type.name
             
             return (namespace, name)
         }

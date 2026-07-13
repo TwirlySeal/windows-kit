@@ -39,20 +39,20 @@ struct MethodDefSig {
         }
     }
     
-    private init(parsing span: inout ParserSpan) throws {
+    private init(parsing span: inout ParserSpan, in file: MetadataFile) throws {
         self.header = try Header(parsing: &span)
         
         let paramCount = try MetadataFile.parseCompressedUnsignedInteger(from: &span)
-        self.returnType = try RetType(parsing: &span)
+        self.returnType = try RetType(parsing: &span, in: file)
         
         self.params = try [ParamToken](count: Int(paramCount)) {
-            try ParamToken(parsing: &span)
+            try ParamToken(parsing: &span, in: file)
         }
     }
     
     init(in file: MetadataFile, at offset: HeapIndex) throws {
         self = try file.withBlobSpan(at: offset) { span in
-            try Self(parsing: &span)
+            try Self(parsing: &span, in: file)
         }
     }
 }

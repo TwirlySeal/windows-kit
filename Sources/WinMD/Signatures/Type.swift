@@ -25,7 +25,7 @@ enum Type {
     case string
     
     indirect case array(element: Type, shape: ArrayShape)
-    case `class`(typeIndex: CodedIndex<TypeDefOrRef.Tag>)
+    case `class`(type: LazyTypeDefOrRef)
     case `enum`(name: String)
     case genericInstance(GenericInstance)
     case genericTypeParameter(index: UInt32)
@@ -33,7 +33,23 @@ enum Type {
     
     // Single-dimensional, zero-based array
     indirect case vector(modifiers: [CustomMod], element: Type)
-    case valueType(typeIndex: CodedIndex<TypeDefOrRef.Tag>)
+    case valueType(type: LazyTypeDefOrRef)
+    
+    struct LazyTypeDefOrRef {
+        let file: MetadataFile
+        let index: CodedIndex<TypeDefOrRef.Tag>
+        
+        init(at index: CodedIndex<TypeDefOrRef.Tag>, in file: MetadataFile) {
+            self.file = file
+            self.index = index
+        }
+        
+        var value: TypeDefOrRef {
+            get throws {
+                try .init(in: file, at: index)
+            }
+        }
+    }
     
     struct GenericInstance {
         enum Kind {
@@ -41,11 +57,19 @@ enum Type {
             case valueType
         }
         
+        private let file: MetadataFile
+        
         let kind: Kind
-        let typeIndex: CodedIndex<TypeDefOrRef.Tag>
+        private let typeIndex: CodedIndex<TypeDefOrRef.Tag>
         let typeArgs: [Type]
         
-        init(parsing span: inout ParserSpan) throws {
+        var type: TypeDefOrRef {
+            get throws {
+                try .init(in: file, at: typeIndex)
+            }
+        }
+        
+        init(parsing span: inout ParserSpan, in file: MetadataFile) throws {
             self.kind = switch try UInt8(parsing: &span) {
             case ElementType.class:
                 .class
@@ -63,8 +87,9 @@ enum Type {
             
             let genArgCount = try MetadataFile.parseCompressedUnsignedInteger(from: &span)
             self.typeArgs = try [Type](count: Int(genArgCount)) {
-                try Type(parsing: &span)
+                try Type(parsing: &span, in: file)
             }
+            self.file = file
         }
     }
     
@@ -77,7 +102,7 @@ enum Type {
             case void
         }
         
-        init(parsing span: inout ParserSpan) throws {
+        init(parsing span: inout ParserSpan, in file: MetadataFile) throws {
             self.customModifiers = try CustomMod.parseZeroOrMore(from: &span)
             
             var copySpan = ParserSpan(span.bytes)
@@ -85,12 +110,12 @@ enum Type {
                 self.pointee = .void
                 span = copySpan
             } else {
-                self.pointee = .type(try Type(parsing: &span))
+                self.pointee = .type(try Type(parsing: &span, in: file))
             }
         }
     }
     
-    init(parsing span: inout ParserSpan) throws {
+    init(parsing span: inout ParserSpan, in file: MetadataFile) throws {
         switch try UInt8(parsing: &span) {
         case ElementType.boolean:
             self = .boolean
@@ -135,40 +160,40 @@ enum Type {
             self = .uint
             
         case ElementType.array:
-            let type = try Type(parsing: &span)
+            let type = try Type(parsing: &span, in: file)
             let shape = try ArrayShape(parsing: &span)
             self = .array(element: type, shape: shape)
             
         case ElementType.class:
             let rawValue = try MetadataFile.parseCompressedUnsignedInteger(from: &span)
-            guard let type = try CodedIndex<TypeDefOrRef.Tag>(rawValue: rawValue) else {
+            guard let typeIndex = try CodedIndex<TypeDefOrRef.Tag>(rawValue: rawValue) else {
                 throw TypeError.nullTypeIndex
             }
-            self = .class(typeIndex: type)
+            self = .class(type: LazyTypeDefOrRef(at: typeIndex, in: file))
             
         case ElementType.genericInst:
-            self = .genericInstance(try GenericInstance(parsing: &span))
+            self = .genericInstance(try GenericInstance(parsing: &span, in: file))
             
         case ElementType.object:
             self = .object
             
         case ElementType.ptr:
-            self = .pointer(try Pointer(parsing: &span))
+            self = .pointer(try Pointer(parsing: &span, in: file))
             
         case ElementType.string:
             self = .string
             
         case ElementType.szArray:
             let customMods = try CustomMod.parseZeroOrMore(from: &span)
-            let type = try Type(parsing: &span)
+            let type = try Type(parsing: &span, in: file)
             self = .vector(modifiers: customMods, element: type)
             
         case ElementType.valueType:
             let rawValue = try MetadataFile.parseCompressedUnsignedInteger(from: &span)
-            guard let type = try CodedIndex<TypeDefOrRef.Tag>(rawValue: rawValue) else {
+            guard let typeIndex = try CodedIndex<TypeDefOrRef.Tag>(rawValue: rawValue) else {
                 throw TypeError.nullTypeIndex
             }
-            self = .valueType(typeIndex: type)
+            self = .valueType(type: LazyTypeDefOrRef(at: typeIndex, in: file))
             
         case ElementType.var:
             let number = try MetadataFile.parseCompressedUnsignedInteger(from: &span)
@@ -187,7 +212,7 @@ enum Type {
     
     init(in file: MetadataFile, at offset: HeapIndex) throws {
         self = try file.withBlobSpan(at: offset) { span in
-            try Self(parsing: &span)
+            try Self(parsing: &span, in: file)
         }
     }
 }

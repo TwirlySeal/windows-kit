@@ -10,7 +10,7 @@ struct ParamToken {
         case byRef
     }
     
-    init(parsing span: inout ParserSpan) throws {
+    init(parsing span: inout ParserSpan, in file: MetadataFile) throws {
         self.customModifiers = try CustomMod.parseZeroOrMore(from: &span)
         
         var copySpan = ParserSpan(span.bytes)
@@ -22,6 +22,6 @@ struct ParamToken {
             self.kind = .normal
         }
         
-        self.type = try Type(parsing: &span)
+        self.type = try Type(parsing: &span, in: file)
     }
 }
