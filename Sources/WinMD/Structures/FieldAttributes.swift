@@ -20,7 +20,7 @@ public struct FieldAttributes {
             self.rawValue = rawValue
         }
         
-        static let `static` = Self(rawValue: 0x0010)
+        public static let `static` = Self(rawValue: 0x0010)
         static let initOnly = Self(rawValue: 0x0020)
         public static let literal = Self(rawValue: 0x0040)
         static let notSerialised = Self(rawValue: 0x0080)
@@ -30,7 +30,7 @@ public struct FieldAttributes {
         
         static let rtSpecialName = Self(rawValue: 0x0400)
         static let hasFieldMarshal = Self(rawValue: 0x1000)
-        static let hasDefault = Self(rawValue: 0x8000)
+        public static let hasDefault = Self(rawValue: 0x8000)
         static let hasFieldRVA = Self(rawValue: 0x0100)
     }
     

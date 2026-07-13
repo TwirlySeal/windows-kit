@@ -59,11 +59,32 @@ func write(type: TypeDef) throws {
     }
 }
 
+extension Constant.ConstantValue {
+    var literalStringValue: String {
+        switch self {
+        case .int8(let v): String(v)
+        case .uint8(let v): String(v)
+        case .int16(let v): String(v)
+        case .uint16(let v): String(v)
+        case .int32(let v): String(v)
+        case .uint32(let v): String(v)
+        case .int64(let v): String(v)
+        case .uint64(let v): String(v)
+        case .float32(let v): String(v)
+        case .float64(let v): String(v)
+        
+        // Wrap strings in quotes
+        case .string(let v): "\"\(v)\""
+        }
+    }
+}
+
 enum EnumError: Error {
     case missingValueField
     case missingCaseConstant
 }
 
+// See ECMA-335 - §II.14.3 Enums
 func write(winRTEnum type: TypeDef) throws {
     let name = try type.name
     let fields = try type.fields
@@ -77,7 +98,11 @@ func write(winRTEnum type: TypeDef) throws {
     
     var cases = [EnumCaseElementSyntax]()
     for field in fields {
-        guard field.flags.flags.contains(.literal) else {
+        // All other fields are static and literal and declare the mapping of
+        // the symbols of the enum to the underlying value
+        guard field.flags.flags.contains(.literal),
+              field.flags.flags.contains(.static),
+              field.flags.flags.contains(.hasDefault) else {
             continue
         }
         
@@ -90,13 +115,13 @@ func write(winRTEnum type: TypeDef) throws {
             EnumCaseElementSyntax(
                 name: .identifier(try field.name),
                 rawValue: InitializerClauseSyntax(
-                    value: IntegerLiteralExprSyntax(integerLiteral: 1)
+                    value: ExprSyntax(stringLiteral: value.literalStringValue)
                 )
             )
         )
     }
     
-    let example = EnumDeclSyntax(
+    let decl = EnumDeclSyntax(
         name: .identifier(name),
         inheritanceClause: InheritanceClauseSyntax {
             InheritedTypeSyntax(type: IdentifierTypeSyntax(name: .identifier("Int")))
@@ -106,7 +131,7 @@ func write(winRTEnum type: TypeDef) throws {
             cases
         })
     }
-    print(example.formatted().description)
+    print(decl.formatted().description)
 }
 
 func write(win32method method: MethodDef) throws {
