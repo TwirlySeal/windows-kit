@@ -1,6 +1,6 @@
 import BinaryParsing
 
-struct Param {
+public struct Param {
     private let file: MetadataFile
     private let rowIndex: Index
     
@@ -8,7 +8,7 @@ struct Param {
     let sequence: UInt16
     private let nameIndex: HeapIndex
     
-    var name: String {
+    public var name: String {
         get throws { try file.string(at: nameIndex) }
     }
     

@@ -1,6 +1,4 @@
 import WinMD
-import SwiftSyntax
-import SwiftSyntaxBuilder
 
 func write(type: TypeDef) throws {
     let category = try type.category
@@ -19,7 +17,7 @@ func write(type: TypeDef) throws {
             print("WinRT attribute (ignored)")
             return
         case .class:
-            print("WinRT class")
+            try write(class: type)
         case .interface:
             print("WinRT interface")
         }

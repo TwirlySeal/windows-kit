@@ -8,10 +8,10 @@ struct Generator {
         // Test MetadataDB
         let database = try await getDatabase()
         
-        for (namespace, namespaceTypes) in database.types {
+        for (_, namespaceTypes) in database.types {
             for (name, types) in namespaceTypes {
                 for type in types {
-                    if try type.category == .enum {
+                    if try type.category == .class && name == "StorageFile" {
                         try write(type: type)
                         return
                     }

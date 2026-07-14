@@ -1,10 +1,10 @@
 import BinaryParsing
 
-struct RetType {
-    let customModifiers: [CustomMod]
-    let kind: Kind
+public struct RetType {
+    public let customModifiers: [CustomMod]
+    public let kind: Kind
     
-    enum Kind {
+    public enum Kind {
         case type(Type)
         case byRef(Type)
         case void

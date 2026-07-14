@@ -1,11 +1,11 @@
 import BinaryParsing
 
-struct ParamToken {
-    let customModifiers: [CustomMod]
-    let kind: Kind
-    let type: Type
+public struct ParamToken {
+    public let customModifiers: [CustomMod]
+    public let kind: Kind
+    public let type: Type
     
-    enum Kind {
+    public enum Kind {
         case normal
         case byRef
     }

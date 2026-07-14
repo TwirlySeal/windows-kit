@@ -21,11 +21,11 @@ public struct MethodDef {
         get throws { try file.string(at: nameIndex) }
     }
     
-    var signature: MethodDefSig {
+    public var signature: MethodDefSig {
         get throws { try .init(in: file, at: signatureIndex) }
     }
     
-    var params: [Param] {
+    public var params: [Param] {
         get throws {
             let range = try file.listRowRange(
                 forParentRow: self.rowIndex,

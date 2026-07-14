@@ -83,7 +83,7 @@ extension Constant.ConstantValue {
 }
 
 extension Type {
-    func swiftTypeName(precedingModifiers: [CustomMod] = []) throws -> String {
+    func swiftTypeName(precedingModifiers: [CustomMod]) throws -> String {
         // Inner modifiers apply to the element type
         
         switch self {
@@ -152,6 +152,21 @@ extension Type {
         case .vector(let innerModifiers, let element):
             let elementTypeName = try element.swiftTypeName(precedingModifiers: innerModifiers)
             return "[\(elementTypeName)]"
+        }
+    }
+}
+
+extension RetType {
+    func swiftTypeName() throws -> String {
+        switch kind {
+        case .type(let type):
+            try type.swiftTypeName(
+                precedingModifiers: self.customModifiers
+            )
+        case .byRef(_):
+            fatalError("Unhandled return type kind: byRef")
+        case .void:
+            "Void"
         }
     }
 }

@@ -1,9 +1,9 @@
 import BinaryParsing
 
-struct MethodDefSig {
+public struct MethodDefSig {
     let header: Header
-    let returnType: RetType
-    let params: [ParamToken]
+    public let returnType: RetType
+    public let params: [ParamToken]
     
     struct Header: RawRepresentable {
         typealias RawValue = UInt8
