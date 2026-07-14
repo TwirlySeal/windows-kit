@@ -10,11 +10,10 @@ func write(type: TypeDef) throws {
         switch category {
         case .enum:
             try write(enum: type)
-            
         case .delegate:
             print("WinRT delegate")
         case .struct:
-            print("WinRT struct")
+            try write(struct: type)
         case .attribute:
             // Attributes are looked up on other items
             print("WinRT attribute (ignored)")
