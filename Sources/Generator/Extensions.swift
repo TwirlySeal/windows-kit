@@ -11,6 +11,17 @@ func hasAttribute(
     }
 }
 
+func hasModifier(
+    _ modifiers: [CustomMod],
+    namespace: String,
+    name: String
+) throws -> Bool {
+    try modifiers.contains { modifier in
+        let type = try modifier.type
+        return try type.name == name && type.namespace == namespace
+    }
+}
+
 extension Constant.ConstantValue {
     var literalStringValue: String {
         switch self {
@@ -76,10 +87,11 @@ extension Type {
             fatalError("Unhandled type: generic type parameter")
             
         case .pointer(let pointer):
-            let isConst = try precedingModifiers.contains { customMod in
-                let type = try customMod.type
-                return try type.namespace == "System.Runtime.CompilerServices" && type.name == "IsConst"
-            }
+            let isConst = try hasModifier(
+                precedingModifiers,
+                namespace: "System.Runtime.CompilerServices",
+                name: "IsConst"
+            )
             
             switch pointer.pointee {
             case .void:
