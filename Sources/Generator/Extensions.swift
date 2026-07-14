@@ -12,7 +12,7 @@ enum Category {
 extension TypeDef {
     var category: Category {
         get throws {
-            guard let extends = try extends else {
+            guard let extends = try self.extends else {
                 return .interface
             }
             
