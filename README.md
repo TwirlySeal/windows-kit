@@ -65,6 +65,8 @@ improve the interface.
 
 - Pure Swift
 
+- Works on Windows, macOS, and Linux
+
 - A WinMD parser made with [Swift Binary
   Parsing](https://swiftpackageindex.com/apple/swift-binary-parsing)
 
