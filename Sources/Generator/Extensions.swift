@@ -1,15 +1,15 @@
 import WinMD
 
-enum Category {
-    case `enum`
-    case delegate
-    case `struct`
-    case attribute
-    case `class`
-    case interface
-}
-
 extension TypeDef {
+    enum Category {
+        case `enum`
+        case delegate
+        case `struct`
+        case attribute
+        case `class`
+        case interface
+    }
+    
     var category: Category {
         get throws {
             guard let extends = try self.extends else {
