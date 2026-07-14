@@ -1,5 +1,45 @@
 import WinMD
 
+enum Category {
+    case `enum`
+    case delegate
+    case `struct`
+    case attribute
+    case `class`
+    case interface
+}
+
+extension TypeDef {
+    var category: Category {
+        get throws {
+            guard let extends = try extends else {
+                return .interface
+            }
+            
+            guard try extends.namespace == "System" else {
+                return .class
+            }
+            
+            return switch try extends.name {
+            case "Enum":
+                .enum
+                
+            case "MulticastDelegate":
+                .delegate
+                
+            case "ValueType":
+                .struct
+                
+            case "Attribute":
+                .attribute
+                
+            default:
+                .class
+            }
+        }
+    }
+}
+
 func hasAttribute(
     _ attributes: [CustomAttribute],
     namespace: String,

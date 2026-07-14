@@ -24,7 +24,7 @@ public struct TypeDef {
         get throws { try file.string(at: typeNamespaceIndex) }
     }
     
-    var extends: TypeDefOrRef? {
+    public var extends: TypeDefOrRef? {
         get throws {
             try extendsIndex.map { index in
                 try .init(in: file, at: index)
@@ -110,44 +110,6 @@ public struct TypeDef {
                 in: file
             ).map { index in
                 try CustomAttribute(in: file, at: index)
-            }
-        }
-    }
-    
-    public enum Category {
-        case `enum`
-        case delegate
-        case `struct`
-        case attribute
-        case `class`
-        case interface
-    }
-    
-    public var category: Category {
-        get throws {
-            guard let extends = try extends else {
-                return .interface
-            }
-            
-            guard try extends.namespace == "System" else {
-                return .class
-            }
-            
-            return switch try extends.name {
-            case "Enum":
-                .enum
-                
-            case "MulticastDelegate":
-                .delegate
-                
-            case "ValueType":
-                .struct
-                
-            case "Attribute":
-                .attribute
-                
-            default:
-                .class
             }
         }
     }
