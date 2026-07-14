@@ -5,19 +5,27 @@ import WinMD
 @main
 struct Generator {
     static func main() async throws {
-        // Test MetadataDB
         let database = try await getDatabase()
         
-        for (_, namespaceTypes) in database.types {
-            for (name, types) in namespaceTypes {
-                for type in types {
-                    if try type.category == .class && name == "StorageFile" {
-                        try write(type: type)
-                        return
-                    }
-                }
-            }
-        }
+        // Enum
+        try write(
+            type: database.types["Windows.System.Diagnostics.DevicePortal"]!["DevicePortalConnectionClosedReason"]!.first!
+        )
+        
+        // Enum (OptionSet)
+        try write(
+            type: database.types["Windows.Media.Protection"]!["RevocationAndRenewalReasons"]!.first!
+        )
+        
+        // Struct
+        try write(
+            type: database.types["Windows.Management.Deployment"]!["DeploymentProgress"]!.first!
+        )
+        
+        // Class with methods
+        try write(
+            type: database.types["Windows.Storage"]!["StorageFile"]!.first!
+        )
     }
     
     static let packageID = "Microsoft.Windows.SDK.Contracts"

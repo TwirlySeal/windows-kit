@@ -8,6 +8,7 @@ enum EnumError: Error {
 }
 
 // See ECMA-335 - §II.14.3 Enums
+// and ECMA-335 - §I.8.5.2 Assemblies and scoping
 func write(enum type: TypeDef) throws {
     let name = try type.name
     let fields = try type.fields
@@ -43,14 +44,42 @@ func write(enum type: TypeDef) throws {
     
     let decl: DeclSyntax
     
+    // If an enum has the `System.FlagsAttribute` attribute, it is actually a
+    // set of named bit flags that can be combined to generate an unnamed value.
     let enumAttributes = try type.customAttributes
     if try hasAttribute(enumAttributes, namespace: "System", name: "FlagsAttribute") {
         decl = DeclSyntax(
-            try StructDeclSyntax("struct \(raw: name): OptionSet") {
-                try VariableDeclSyntax("let rawValue: \(raw: underlyingTypeName)")
+            StructDeclSyntax(
+                name: .identifier(name),
+                inheritanceClause: InheritanceClauseSyntax {
+                    InheritedTypeSyntax(type: TypeSyntax(stringLiteral: "OptionSet"))
+                }
+            ) {
+                VariableDeclSyntax(
+                    .let,
+                    name: PatternSyntax(stringLiteral: "rawValue"),
+                    type: TypeAnnotationSyntax(
+                        type: TypeSyntax(stringLiteral: underlyingTypeName)
+                    )
+                )
                 
                 for item in cases {
-                    try VariableDeclSyntax("static let \(raw: item.name) = Self(rawValue: \(raw: item.value))")
+                    VariableDeclSyntax(
+                        modifiers: DeclModifierListSyntax(arrayLiteral:
+                            DeclModifierSyntax(name: .keyword(.static))
+                        ),
+                        .let,
+                        name: PatternSyntax(stringLiteral: item.name),
+                        initializer: InitializerClauseSyntax(value: FunctionCallExprSyntax(
+                            callee: DeclReferenceExprSyntax(baseName: .keyword(.Self))
+                        ) {
+                            LabeledExprSyntax(
+                                label: .identifier("rawValue"),
+                                colon: .colonToken(),
+                                expression: ExprSyntax(stringLiteral: item.value)
+                            )
+                        })
+                    )
                 }
             }
         )

@@ -13,7 +13,14 @@ func write(struct type: TypeDef) throws {
             let fieldType = try signature.type.swiftTypeName(
                 precedingModifiers: signature.customModifiers
             )
-            try VariableDeclSyntax("let \(raw: name): \(raw: fieldType)")
+
+            VariableDeclSyntax(
+                .let,
+                name: PatternSyntax(stringLiteral: name),
+                type: TypeAnnotationSyntax(
+                    type: TypeSyntax(stringLiteral: fieldType)
+                )
+            )
         }
     }
     
