@@ -38,7 +38,7 @@ func write(enum type: TypeDef) throws {
         }
         let value = try constant.value
         
-        cases.append((try field.name, value.literalStringValue))
+        cases.append((try field.name.toCamelCase(), value.literalStringValue))
     }
     
     let decl: DeclSyntax
