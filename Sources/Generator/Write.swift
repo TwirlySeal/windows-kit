@@ -211,7 +211,7 @@ func write(winRTEnum type: TypeDef) throws {
                 try VariableDeclSyntax("let rawValue: \(raw: underlyingTypeName)")
                 
                 for item in cases {
-                    try VariableDeclSyntax("static let \(raw: item.name) = Self(\(raw: item.value))")
+                    try VariableDeclSyntax("static let \(raw: item.name) = Self(rawValue: \(raw: item.value))")
                 }
             }
         )
