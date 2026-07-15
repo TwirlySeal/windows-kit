@@ -1,5 +1,27 @@
 import WinMD
 
+func hasAttribute(
+    _ attributes: [CustomAttribute],
+    namespace: String,
+    name: String
+) throws -> Bool {
+    try attributes.contains { attribute in
+        let parent = try attribute.type.parent
+        return try parent.name == name && parent.namespace == namespace
+    }
+}
+
+func hasModifier(
+    _ modifiers: [CustomMod],
+    namespace: String,
+    name: String
+) throws -> Bool {
+    try modifiers.contains { modifier in
+        let type = try modifier.type
+        return try type.name == name && type.namespace == namespace
+    }
+}
+
 func write(type: TypeDef) throws {
     let category = try type.category
     
