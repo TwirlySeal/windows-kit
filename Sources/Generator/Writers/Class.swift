@@ -21,6 +21,9 @@ private func makeMemberSyntax(for method: MethodDef) throws -> MemberBlockItemLi
     let signature = try method.signature
     let returnType = try signature.returnType.swiftTypeName()
     
+    // The associated 'MethodSemantics' table row for this MethodDef row should
+    // also have the 'Getter' flag set in the 'Semantics' column, but this is
+    // not enforced
     let getterPrefix = "get_"
     if method.flags.flags.contains(.specialName),
        methodName.starts(with: getterPrefix) {
