@@ -12,7 +12,7 @@ public struct MethodDef {
     
     private let rva: UInt32
     let implFlags: MethodImplAttributes
-    let flags: MethodAttributes
+    public let flags: MethodAttributes
     private let nameIndex: HeapIndex
     private let signatureIndex: HeapIndex
     private let paramListIndex: Index

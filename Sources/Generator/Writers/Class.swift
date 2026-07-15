@@ -22,7 +22,8 @@ private func makeMemberSyntax(for method: MethodDef) throws -> MemberBlockItemLi
     let returnType = try signature.returnType.swiftTypeName()
     
     let getterPrefix = "get_"
-    if methodName.starts(with: getterPrefix) {
+    if method.flags.flags.contains(.specialName),
+       methodName.starts(with: getterPrefix) {
         let propertyName = String(
             methodName.dropFirst(getterPrefix.count)
         ).toCamelCase()

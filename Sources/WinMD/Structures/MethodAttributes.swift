@@ -1,5 +1,5 @@
-struct MethodAttributes {
-    typealias RawValue = UInt16
+public struct MethodAttributes {
+    public typealias RawValue = UInt16
     
     enum MemberAccess: RawValue, Maskable {
         static let mask: RawValue = 0x0007
@@ -13,8 +13,12 @@ struct MethodAttributes {
         case `public` = 0x0006
     }
     
-    struct Flags: OptionSet {
-        let rawValue: RawValue
+    public struct Flags: OptionSet, Sendable {
+        public let rawValue: RawValue
+        
+        public init(rawValue: RawValue) {
+            self.rawValue = rawValue
+        }
         
         static let `static` = Self(rawValue: 0x0010)
         static let `final` = Self(rawValue: 0x0020)
@@ -23,7 +27,7 @@ struct MethodAttributes {
         
         static let strict = Self(rawValue: 0x0200)
         static let abstract = Self(rawValue: 0x0400)
-        static let specialName = Self(rawValue: 0x0800)
+        public static let specialName = Self(rawValue: 0x0800)
         
         // Interop attributes
         static let pinvokeImpl = Self(rawValue: 0x2000)
@@ -45,7 +49,7 @@ struct MethodAttributes {
     private let rawValue: RawValue
     
     let memberAccess: MemberAccess
-    var flags: Flags {
+    public var flags: Flags {
         .init(rawValue: rawValue)
     }
     let vtableLayout: VtableLayout
