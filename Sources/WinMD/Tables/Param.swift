@@ -5,7 +5,7 @@ public struct Param {
     private let rowIndex: Index
     
     let flags: ParamAttributes
-    let sequence: UInt16
+    public let sequence: UInt16
     private let nameIndex: HeapIndex
     
     public var name: String {
