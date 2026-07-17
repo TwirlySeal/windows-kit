@@ -14,10 +14,6 @@ func write(class type: TypeDef) throws {
     print(decl.formatted().description)
 }
 
-enum MethodError: Error {
-    case paramCountMismatch
-}
-
 private func makeMemberSyntax(for method: MethodDef) throws -> MemberBlockItemListSyntax {
     let methodName = try method.name
     let paramRows = try method.params
