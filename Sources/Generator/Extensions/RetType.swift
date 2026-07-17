@@ -1,6 +1,7 @@
 import WinMD
 
 extension RetType {
+    /// Generates the equivalent Swift type name for this WinMD return type
     func swiftTypeName() throws -> String {
         switch kind {
         case .type(let type):
