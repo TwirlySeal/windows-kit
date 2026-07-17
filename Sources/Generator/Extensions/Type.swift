@@ -1,9 +1,36 @@
 import WinMD
 
 extension Type {
+    /// ### Custom Modifiers
+    /// Custom modifiers apply to the type node immediately following them. For
+    /// pointer types, inner modifiers apply to the **pointee** (the data being
+    /// pointed to), not the pointer address itself. For vector types, inner
+    /// modifiers apply to the element type, not the vector container itself.
+    ///
+    /// ### C++ Const Pointer Semantics and Mapping
+    /// WinMD pointer semantics are designed to mirror C++, so understanding C++
+    /// pointer semantics can be helpful.
+    ///
+    /// - `const T*` (pointer to constant data)
+    ///   - **C++**: The data at the memory address cannot be changed, but the pointer
+    ///   itself can be reassigned to a different address.
+    ///   - **WinMD**: An `IsConst` custom modifier precedes the element type `T`.
+    ///   - **Swift**: Maps to an immutable `UnsafePointer<T>`.
+    ///
+    /// - `T* const` (constant pointer to mutable data)
+    ///   - **C++**: The pointer is locked to a specific memory address, but the
+    ///   data at the address can be modified.
+    ///   - **WinMD**: An `IsConst` modifier precedes the pointer type itself
+    ///   (rather than the element type).
+    ///   - **Swift**: Maps to an `UnsafeMutablePointer<T>`. Because Swift
+    ///   function parameters are inherently immutable `let` constants by
+    ///   default, the pointer address is already locked, but the mutable
+    ///   pointee requires an `UnsafeMutablePointer`.
+    ///
+    /// - Parameters:
+    ///   - precedingModifiers: Preceding custom modifiers parsed from the
+    ///   signature containing this type
     func swiftTypeName(precedingModifiers: [CustomMod]) throws -> String {
-        // Inner modifiers apply to the element type
-        
         switch self {
         case .boolean: return "Bool"
         case .char:
