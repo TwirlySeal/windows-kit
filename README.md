@@ -11,10 +11,10 @@ Windows APIs provided by this project will include:
 
 - [Windows SDK](https://learn.microsoft.com/en-us/windows/apps/windows-sdk/)
 
-- Windows Driver Kit (WDK)
-
 - [Windows App
   SDK](https://learn.microsoft.com/en-us/windows/apps/windows-app-sdk/)
+
+- Windows Driver Kit (WDK)
 
 ## How it works
 
