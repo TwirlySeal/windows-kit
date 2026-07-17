@@ -1,6 +1,8 @@
 import WinMD
 
 extension Type {
+    /// Generates the equivalent Swift type name for this WinMD type
+    ///
     /// ### Custom Modifiers
     /// Custom modifiers apply to the type node immediately following them. For
     /// pointer types, inner modifiers apply to the **pointee** (the data being
