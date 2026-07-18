@@ -5,8 +5,14 @@ public struct MetadataDB {
     /// parent -> children
     public let nested: [TypeDef: [TypeDef]]
     
-    // Removes the generic arity suffix (e.g. `1, `2) from type names, which
-    // indicates the number of generic parameters
+    /// Removes the generic arity suffix (e.g. `1, `2) from type names, which
+    /// indicates the number of generic parameters
+    ///
+    /// The type system in Windows Metadata allows overloading of types by the
+    /// number of generic parameters, meaning multiple types can have the same
+    /// name if they have different generic arity. However, every type within a
+    /// given namespace is required to have a unique string name. The generic
+    /// arity suffix ensures uniqueness.
     public static func trimGenericArity(_ name: Substring) -> Substring {
         if let index = name.firstIndex(of: "`") {
             return name[..<index]
