@@ -1,21 +1,21 @@
 # Windows Metadata format
 
-- WinMD files use the same file format as Common Language Runtime (CLR)
-  assemblies, as defined by the ECMA-335 specification. CLR is the standard
-  which .NET is an implementation of.
+WinMD files use the same file format as Common Language Runtime (CLR)
+assemblies, as defined by the ECMA-335 specification. CLR is the standard which
+.NET is an implementation of.
 
-- WinMD files from Microsoft only contain metadata, but third-party WinMD files
-  may contain code.
+WinMD files from Microsoft only contain metadata, but third-party WinMD files
+may contain code.
 
-- The CLR assembly format is based on the Microsoft Portable Executable (PE)
-  format. We have to follow this format to reach the metadata where APIs are
-  described.
+The CLR assembly format is based on the Microsoft Portable Executable (PE)
+format. We have to follow this format to reach the metadata where APIs are
+described.
 
-- This document references sections from ECMA-335 for further reading. The
-  [page](https://learn.microsoft.com/en-us/uwp/winrt-cref/winmd-files) about
-  Windows Metadata files on the Microsoft website is also useful.
+> This document references sections from ECMA-335 for further reading. The
+> [page](https://learn.microsoft.com/en-us/uwp/winrt-cref/winmd-files) about
+> Windows Metadata files on the Microsoft website is also useful.
 
-- Unless otherwise stated, the format is in little endian.
+Unless otherwise stated, the format is in little endian.
 
 There are two ways metadata is stored in WinMD files:
 
