@@ -22,20 +22,31 @@ To be able to call Windows APIs from Swift, we need to speak their **ABI**
 (Application Binary Interface) which defines how compiled programs can talk to
 each other. There are 3 main ABIs used on Windows:
 
-1.  The **C** programming language ABI, used by the low-level Win32 API
+1.  The **C** programming language ABI, used by classic Win32 APIs and newer
+    APIs that need low level control like
+    [IORing](https://learn.microsoft.com/en-us/windows/win32/api/ioringapi/).
 
-2.  **COM** (Component Object Model), which adds object-oriented constructs on
-    top of the C ABI
+2.  **COM** (Component Object Model), which adds object-oriented constructs and
+    reference counting on top of the C ABI and was designed to be a subset of
+    the C++ ABI that is common between different compilers. At the time,
+    Microsoft’s MSVC compiler for C++ lacked ABI stability, meaning binaries
+    compiled with one version could not call those compiled with another. Other
+    C++ compilers with their own incompatible ABIs were also commonly used in
+    Windows development. A standard ABI for interoperability with other
+    languages like Delphi and Visual Basic was another goal of COM. COM is used
+    by Win32 APIs like DirectX and the Windows Shell API.
 
 3.  **WinRT** (Windows Runtime), which is based on COM but adds additional
-    metadata to enable automatic generation of safe, idiomatic bindings
+    metadata to enable automatic generation of bindings for any programming
+    language. WinRT is used by modern, high-level Windows APIs for tasks such as
+    notifications and UI.
 
 Microsoft’s [win32metadata](https://github.com/microsoft/win32metadata) project
-also provides metadata for Win32 and COM APIs.
+also provides projection metadata for C and COM APIs.
 
-Metadata is stored in Windows Metadata (WinMD) files, which are explained in the
-docs for this project [here](docs/windows-metadata.md). These metadata files are
-distributed via NuGet packages:
+Metadata for Windows APIs is stored in Windows Metadata (WinMD) files, which are
+explained in the docs for this project [here](docs/windows-metadata.md). These
+metadata files are distributed via NuGet packages:
 
 - Windows SDK (Win32):
   [Microsoft.Windows.SDK.Win32Metadata](https://www.nuget.org/packages/Microsoft.Windows.SDK.Win32Metadata)
@@ -53,9 +64,11 @@ distributed via NuGet packages:
 
   - Some C, C++, and COM APIs without WinRT metadata are also included
 
-We can download and parse these files to generate C/C++ headers that define the
-APIs and hide the ABI details. These headers will include Clang attributes that
-allow the Swift compiler to import the APIs with a more Swift-friendly
+We can download and parse these files to generate code for a language projection
+that defines the APIs and implements their ABIs. C headers will be generated for
+C APIs, while C++ headers will be generated for COM and WinRT because of their
+basis on a subset of the C++ ABI. These headers will include Clang attributes
+that allow the Swift compiler to import the APIs with a more Swift-friendly
 interface, and we will also generate Swift wrappers where needed to further
 improve the interface.
 
