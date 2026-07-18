@@ -34,7 +34,8 @@ Microsoft’s [win32metadata](https://github.com/microsoft/win32metadata) projec
 also provides metadata for Win32 and COM APIs.
 
 Metadata is stored in Windows Metadata (WinMD) files, which are explained in the
-docs for this project. These metadata files are distributed via NuGet packages:
+docs for this project [here](docs/windows-metadata.md). These metadata files are
+distributed via NuGet packages:
 
 - Windows SDK (Win32):
   [Microsoft.Windows.SDK.Win32Metadata](https://www.nuget.org/packages/Microsoft.Windows.SDK.Win32Metadata)
