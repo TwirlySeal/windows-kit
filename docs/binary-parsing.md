@@ -1,15 +1,21 @@
-# Binary Parsing
+# Windows Metadata format
 
-Binary formats are not human readable, meaning we must parse them using code to
-discover the information inside. We use a library called Swift Binary Parsing to
-do this.
+- WinMD files use the same file format as Common Language Runtime (CLR)
+  assemblies, as defined by the ECMA-335 specification. CLR is the standard
+  which .NET is an implementation of.
 
-Resource: [Getting Started with
-BinaryParsing](https://apple.github.io/swift-binary-parsing/documentation/binaryparsing/gettingstarted)
+- WinMD files from Microsoft only contain metadata, but third-party WinMD files
+  may contain code.
 
-# CLI metadata format
+- The CLR assembly format is based on the Microsoft Portable Executable (PE)
+  format. We have to follow this format to reach the metadata where APIs are
+  described.
 
-Unless otherwise stated, the format is in little endian.
+- This document references sections from ECMA-335 for further reading. The
+  [page](https://learn.microsoft.com/en-us/uwp/winrt-cref/winmd-files) about
+  Windows Metadata files on the Microsoft website is also useful.
+
+- Unless otherwise stated, the format is in little endian.
 
 There are two ways metadata is stored in WinMD files:
 
@@ -26,16 +32,14 @@ each row is known, so we can multiply it by a row index to get the offset for
 that row. This allows table rows to link to each other using indices for O(1)
 lookups.
 
-![Table structure diagram](./tables.svg)
-
 There are two types of columns in table rows:
 
 1.  Constant - A literal value or bitmask
 
 2.  Index - An index to a row in the same or another table.
 
-A bitmask constant stores multiple pieces of information in each byte, each of
-which can be accessed using a bitmask that isolates the bits of interest.
+A bitmask constant stores multiple pieces of information that can be accessed
+using bitmasks.
 
 There are two types of indices:
 
@@ -43,29 +47,46 @@ There are two types of indices:
 2.  Coded - an index into one of several tables. A few bits of the index value
     are reserved to define which table it targets.
 
+## Bitmask constants
+
+> See ‘§II.23.1 Bitmasks and flags’ for more information.
+
+Bitmask constants can contain single-bit flags and attributes represented using
+multiple bits where each allowed value has a specific meaning.
+
+- Bit flags are best represented as structs with the
+  [`OptionSet`](https://developer.apple.com/documentation/swift/optionset)
+  protocol.
+
+- Multi-bit attributes are best represented as enums with raw values.
+
+Bitmask constants containing both can be represented as a struct defining these
+as nested types with fields/properties projecting the raw value as each type. A
+failable initializer can be used to return nil if any of the enums return nil.
+
 ## The `Index` type
 
 Indices to tables are 1-based because an index of zero is reserved to mean a
-null index that does not index a row at all. To make this safer, I applied the
-[“parse, don’t
+null index that does not index a row at all. Checking this at every point of use
+is easy to forget, and the compiler cannot catch this mistake. It will break at
+runtime when you try to resolve the index.
+
+To make this safer, I applied the [“parse, don’t
 validate”](https://lexi-lambda.github.io/blog/2019/11/05/parse-don-t-validate/)
-idiom by Alexis King:
+idiom by Alexis King. I made an `Index` type which conforms to
+[`RawRepresentable`](https://developer.apple.com/documentation/swift/rawrepresentable)
+and has a failable initializer that returns nil when the raw value is 0. Now,
+checks are moved to the boundaries of the program where indices are constructed
+from raw values, and you cannot use it to look up a row without the compiler
+forcing you to acknowledge the possibility of absence. Once those checks have
+been performed, they never need to be checked again. The type itself (`Index` vs
+`Optional<Index>`) proves the value is non-zero.
 
-- Validation (the brittle way): Checking `if index == 0` at the point of use. If
-  you forget the check, the code still compiles, but breaks at runtime when you
-  resolve the index.
+- The `CodedIndex` type composes an `Index` with a tag to safely represent coded
+  indices.
 
-- Parsing (the robust way): I made an `Index` type which conforms to
-  [`RawRepresentable`](https://developer.apple.com/documentation/swift/rawrepresentable)
-  and has a failable initializer that returns nil when the raw value is 0. Now,
-  checks are moved to the boundaries of the program where indices are
-  constructed from raw values, and you cannot use it to look up a row without
-  the compiler forcing you to acknowledge the possibility of absence. Once those
-  checks have been performed, they never need to be checked again. The type
-  itself (`Index` vs `Optional<Index>`) proves the value is non-zero.
-
-`Index` also conforms to `Strideable` so ranges of indices can be represented
-with the same safety.
+- `Index` conforms to `Strideable` so ranges of indices can be represented with
+  the same safety.
 
 ## List columns
 
@@ -90,35 +111,6 @@ range. This is evidenced by windows-rs which assumes the list column of the next
 row is non-null
 ([source](https://github.com/microsoft/windows-rs/blob/a1e9fce43c026221f62f0a149267cb6d7d3c607b/crates/libs/metadata/src/reader/file.rs#L523-L538)).
 
-## Bitmask constants
-
-Some columns are structures containing multiple pieces of information in their
-bit width, which can be isolated using bitmasks. These are defined in ‘§II.23.1
-Bitmasks and flags’, and `TypeAttributes` is an example.
-
-There are two kinds of information stored in bitmask constants:
-
-1.  Bit flags, which are independent. I found structs implementing the
-    [`OptionSet`](https://developer.apple.com/documentation/swift/optionset)
-    protocol are effective for representing these.
-
-2.  Multi-bit segments which have a closed set of mutually exclusive values.
-    These are best represented as enums with raw values, and I made a `Maskable`
-    protocol which uses a static `mask` property to provide a default `masking`
-    initializer that applies the bitmask and uses the resulting value as the raw
-    value.
-
-Most structures contain multiple option sets and enums, so each type is nested
-inside a greater struct where values of these types are available as properties.
-The outer struct has a failable initialiser that returns nil if any of the
-mutually exclusive values don’t match the defined enums. The usage site can then
-decide whether the nil case is an error.
-
-`OptionSet` fields are computed properties initialised from a single `rawValue`
-field, since they don’t fail. Enum fields are stored which duplicates
-information, but this keeps handling of the nil case in the initialiser instead
-of computed properties.
-
 # Heaps
 
 > See ‘§II.24.2.2 Stream header’ for more information.
@@ -126,20 +118,15 @@ of computed properties.
 Heaps are variable-length data regions where data is accessed via a byte offset.
 The length or end of data in a heap is needed to know where to stop reading.
 
-## String heap
-
-The string heap contains null-terminated UTF-8 strings.
-
-![Heap structure diagram](./heap.svg)
-
 ## Blob heap
 
 The blob heap stores variable-length data in non-normalised, contiguous binary
 objects called blobs. A blob stores its length in the first few bytes.
 
-For example, method signatures describe the types of parameters of a method and
-the type of its return value. They are stored in blobs because they can have any
-number of parameters and cannot fit in a fixed-size table row.
+For example, method signatures describe the types of parameters for a method and
+the type of its return value. They are stored in blobs because types can be
+arbitrarily nested (e.g. with generic types) and cannot fit in a fixed-size
+table row.
 
 The length prefix of blobs and integers within signatures are compressed using a
 variable-length encoding; the first few bits signal the total byte length of the

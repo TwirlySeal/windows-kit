@@ -33,11 +33,8 @@ each other. There are 3 main ABIs used on Windows:
 Microsoft’s [win32metadata](https://github.com/microsoft/win32metadata) project
 also provides metadata for Win32 and COM APIs.
 
-Metadata is stored in
-[WinMD](https://learn.microsoft.com/en-us/uwp/winrt-cref/winmd-files) (Windows
-Metadata) files, which use the same binary format as .NET assemblies
-([ECMA-335](https://ecma-international.org/wp-content/uploads/ECMA-335_6th_edition_june_2012.pdf))
-and are distributed via NuGet packages:
+Metadata is stored in Windows Metadata (WinMD) files, which are explained in the
+docs for this project. These metadata files are distributed via NuGet packages:
 
 - Windows SDK (Win32):
   [Microsoft.Windows.SDK.Win32Metadata](https://www.nuget.org/packages/Microsoft.Windows.SDK.Win32Metadata)
