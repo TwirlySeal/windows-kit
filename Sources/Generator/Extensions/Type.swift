@@ -1,4 +1,6 @@
 import WinMD
+import SwiftSyntax
+import SwiftSyntaxBuilder
 
 extension Type {
     /// Generates the equivalent Swift type name for this WinMD type
@@ -65,13 +67,30 @@ extension Type {
             
         case .enum(let name): return name
             
-        case .genericInstance(genericInstance: _):
-            fatalError("Unhandled type: generic instance")
+        case .genericInstance(let genericInstance):
+            let typeName = String(MetadataDB.trimGenericArity(
+                try genericInstance.type.name[...]
+            ))
+            let arguments = try GenericArgumentListSyntax {
+                for arg in genericInstance.typeArgs {
+                    GenericArgumentSyntax(argument: .type(
+                        TypeSyntax(
+                            stringLiteral: try arg.swiftTypeName(
+                                precedingModifiers: []
+                            )
+                        )
+                    ))
+                }
+            }
+            return IdentifierTypeSyntax(
+                name: .identifier(typeName),
+                genericArgumentClause: GenericArgumentClauseSyntax(
+                    arguments: arguments
+                )
+            ).description
             
-        case .genericTypeParameter(index: _):
-            // "T\(index)"?
-            // `T0`, `T1`, etc.
-            fatalError("Unhandled type: generic type parameter")
+        case .genericTypeParameter(let index):
+            return "T\(index)"
             
         case .pointer(let pointer):
             let isConst = try hasModifier(

@@ -61,9 +61,9 @@ public enum Type {
         
         let kind: Kind
         private let typeIndex: CodedIndex<TypeDefOrRef.Tag>
-        let typeArgs: [Type]
+        public let typeArgs: [Type]
         
-        var type: TypeDefOrRef {
+        public var type: TypeDefOrRef {
             get throws {
                 try .init(in: file, at: typeIndex)
             }
