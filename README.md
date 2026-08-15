@@ -100,3 +100,10 @@ to further improve the interface.
 
 > The ZIP parser, Deflate decompressor, and `BitSpan` could be good to make
 > available as separate libraries
+
+## Licence
+
+Windows Kit uses the same licence as
+[Swift](https://www.swift.org/legal/license.html): Apache 2.0 with a Runtime
+Library Exception. It allows you to use this library in compiled software
+without needing to include copyright attribution in your final binary product.
