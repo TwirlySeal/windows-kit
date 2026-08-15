@@ -27,14 +27,14 @@ each other. There are 3 main ABIs used on Windows:
     [IORing](https://learn.microsoft.com/en-us/windows/win32/api/ioringapi/).
 
 2.  **COM** (Component Object Model), which adds object-oriented constructs and
-    reference counting on top of the C ABI and was designed to be a subset of
-    the C++ ABI that is common between different compilers. At the time,
-    Microsoft’s MSVC compiler for C++ lacked ABI stability, meaning binaries
-    compiled with one version could not call those compiled with another. Other
-    C++ compilers with their own incompatible ABIs were also commonly used in
-    Windows development. A standard ABI for interoperability with other
-    languages like Delphi and Visual Basic was another goal of COM. COM is used
-    by Win32 APIs like DirectX and the Windows Shell API.
+    reference counting on top of the C ABI. At the time, Microsoft’s MSVC
+    compiler for C++ lacked ABI stability, meaning binaries compiled with one
+    version could not call those compiled with another. Other C++ compilers with
+    their own incompatible ABIs were also commonly used in Windows development.
+    COM was designed to be a stable subset of the MSVC C++ ABI that could serve
+    as a standard for interoperability between different C++ compilers and other
+    languages like Delphi and Visual Basic. COM is used by Win32 APIs like
+    DirectX and the Windows Shell API.
 
 3.  **WinRT** (Windows Runtime), which is based on COM but adds additional
     metadata to enable automatic generation of bindings for any programming
@@ -67,10 +67,10 @@ metadata files are distributed via NuGet packages:
 We can download and parse these files to generate code for a language projection
 that defines the APIs and implements their ABIs. C headers will be generated for
 C APIs, while C++ headers will be generated for COM and WinRT because of their
-basis on a subset of the C++ ABI. These headers will include Clang attributes
-that allow the Swift compiler to import the APIs with a more Swift-friendly
-interface, and we will also generate Swift wrappers where needed to further
-improve the interface.
+basis on a subset of the MSVC C++ ABI. These headers will include Clang
+attributes that allow the Swift compiler to import the APIs with a more
+Swift-friendly interface, and we will also generate Swift wrappers where needed
+to further improve the interface.
 
 ## Projection Generator Features
 
