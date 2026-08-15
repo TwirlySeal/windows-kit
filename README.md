@@ -24,7 +24,9 @@ each other. There are 3 main ABIs used on Windows:
 
 1.  The **C** programming language ABI, used by classic Win32 APIs and newer
     APIs that need low level control like
-    [IORing](https://learn.microsoft.com/en-us/windows/win32/api/ioringapi/).
+    [IORing](https://learn.microsoft.com/en-us/windows/win32/api/ioringapi/)
+    (detailed
+    [here](https://windows-internals.com/i-o-rings-when-one-i-o-operation-is-not-enough/)).
 
 2.  **COM** (Component Object Model), which adds object-oriented constructs and
     reference counting on top of the C ABI. At the time, Microsoft’s MSVC
