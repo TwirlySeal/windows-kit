@@ -10,11 +10,11 @@ public struct TypeRef {
     private let typeNameIndex: HeapIndex
     private let typeNamespaceIndex: HeapIndex
     
-    var name: String {
+    public var name: String {
         get throws { try file.string(at: typeNameIndex) }
     }
     
-    var namespace: String {
+    public var namespace: String {
         get throws { try file.string(at: typeNamespaceIndex) }
     }
     

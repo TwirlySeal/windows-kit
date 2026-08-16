@@ -5,7 +5,7 @@ enum InterfaceImplError: Error {
     case missingInterface
 }
 
-struct InterfaceImpl {
+public struct InterfaceImpl {
     private let file: MetadataFile
     private let rowIndex: Index
     
@@ -16,11 +16,11 @@ struct InterfaceImpl {
         get throws { try TypeDef(in: file, at: classIndex) }
     }
     
-    var interface: TypeDefOrRef {
+    public var interface: TypeDefOrRef {
         get throws { try TypeDefOrRef(in: file, at: interfaceIndex) }
     }
     
-    var customAttributes: [CustomAttribute] {
+    public var customAttributes: [CustomAttribute] {
         get throws {
             try CustomAttribute.rowRange(
                 tag: .interfaceImpl,

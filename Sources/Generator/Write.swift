@@ -22,7 +22,7 @@ func hasModifier(
     }
 }
 
-func write(type: TypeDef) throws {
+func write(type: TypeDef, metadata: MetadataDB) throws {
     let category = try type.category
     
     if type.flags.implementation.contains(.windowsRuntime) {
@@ -39,7 +39,7 @@ func write(type: TypeDef) throws {
             print("WinRT attribute (ignored)")
             return
         case .class:
-            try write(class: type)
+            try write(class: type, metadata: metadata)
         case .interface:
             print("WinRT interface")
         }

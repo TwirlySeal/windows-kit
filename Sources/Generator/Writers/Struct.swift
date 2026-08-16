@@ -6,7 +6,7 @@ func write(struct type: TypeDef) throws {
     let structName = try type.name
     let fields = try type.fields
     
-    let decl = try StructDeclSyntax("struct \(raw: structName)") {
+    let decl = try StructDeclSyntax(name: .identifier(structName)) {
         for field in fields {
             let name = try field.name.toCamelCase()
             let signature = try field.signature

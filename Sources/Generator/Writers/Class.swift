@@ -2,10 +2,103 @@ import WinMD
 import SwiftSyntax
 import SwiftSyntaxBuilder
 
-func write(class type: TypeDef) throws {
+enum ClassError: Error {
+    case disallowedTypeSpec
+    case missingBaseType
+}
+
+func write(class type: TypeDef, metadata: MetadataDB) throws {
     let className = try type.name
     
-    let decl = try ClassDeclSyntax("class \(raw: className)") {
+    var interfaceImpls = try type.interfaceImpls
+    var currentDef: TypeDef = type
+    
+    // Handle interface impls inherited from base classes (WinRT composable classes)
+    baseLoop: while true {
+        switch try currentDef.extends {
+        case .typeDef(let typeDef):
+            currentDef = typeDef
+            
+        case .typeRef(let typeRef):
+            let namespace = try typeRef.namespace
+            let name = try typeRef.name
+            
+            // System.Object is an external .NET type, so it will never
+            // appear in WinMD files (and therefore the MetadataDB).
+            if namespace == "System" && name == "Object" {
+                break baseLoop
+            }
+            
+            currentDef = try metadata.findTypeDef(
+                namespace: namespace,
+                name: name
+            )
+            
+        case .typeSpec:
+            throw ClassError.disallowedTypeSpec
+            
+        case .none:
+            // WinRT classes should always have an inheritance chain up to System.Object
+            throw ClassError.missingBaseType
+        }
+        
+        interfaceImpls.append(contentsOf: try currentDef.interfaceImpls)
+    }
+    
+    struct Interface {
+        let impl: InterfaceImpl
+        let name: String
+        let isDefault: Bool
+        let isExclusive: Bool
+    }
+    
+    var interfaces = [Interface]()
+    for impl in interfaceImpls {
+        let isDefault = try hasAttribute(
+            impl.customAttributes,
+            namespace: "Windows.Foundation.Metadata",
+            name: "DefaultAttribute"
+        )
+        
+        let name: String
+        let interfaceDef: TypeDef
+        switch try impl.interface {
+        case .typeDef(let typeDef):
+            name = try typeDef.name
+            interfaceDef = typeDef
+            
+        case .typeRef(let typeRef):
+            name = try typeRef.name
+            interfaceDef = try metadata.findTypeDef(
+                namespace: typeRef.namespace,
+                name: name
+            )
+        case .typeSpec:
+            throw ClassError.disallowedTypeSpec
+        }
+        
+        let isExclusive = try hasAttribute(
+            try interfaceDef.customAttributes,
+            namespace: "Windows.Foundation.Metadata",
+            name: "ExclusiveToAttribute"
+        )
+        
+        interfaces.append(Interface(
+            impl: impl,
+            name: name,
+            isDefault: isDefault,
+            isExclusive: isExclusive
+        ))
+    }
+    
+    let decl = try ClassDeclSyntax(
+        name: .identifier(className),
+        inheritanceClause: InheritanceClauseSyntax {
+            for interface in interfaces where !interface.isExclusive {
+                InheritedTypeSyntax(type: TypeSyntax(stringLiteral: interface.name))
+            }
+        }
+    ) {
         for method in try type.methods {
             try makeMemberSyntax(for: method)
         }

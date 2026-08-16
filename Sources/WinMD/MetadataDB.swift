@@ -1,9 +1,30 @@
+enum MetadataError: Error {
+    case duplicateTypeDef
+    case missingTypeDef
+}
+
 public struct MetadataDB {
     /// namespace -> name -> [TypeDef]
-    public let types: [String: [String: [TypeDef]]]
+    private let types: [String: [String: [TypeDef]]]
     
     /// parent -> children
-    public let nested: [TypeDef: [TypeDef]]
+    private let nested: [TypeDef: [TypeDef]]
+    
+    /// Find a TypeDef with a namespace and name, throwing an error if it is
+    /// missing or there is more than one match
+    public func findTypeDef(namespace: String, name: String) throws -> TypeDef {
+        guard let namespaceDict = types[namespace],
+              let rows = namespaceDict[name],
+              !rows.isEmpty else {
+            throw MetadataError.missingTypeDef
+        }
+        
+        guard rows.count == 1 else {
+            throw MetadataError.duplicateTypeDef
+        }
+        
+        return rows[0]
+    }
     
     /// Removes the generic arity suffix (e.g. `1, `2) from type names, which
     /// indicates the number of generic parameters

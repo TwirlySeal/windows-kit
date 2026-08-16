@@ -83,7 +83,7 @@ public struct TypeDef {
         }
     }
     
-    var interfaceImpls: [InterfaceImpl] {
+    public var interfaceImpls: [InterfaceImpl] {
         get throws {
             try InterfaceImpl.rowRange(forOwner: self.rowIndex, in: file)
                 .map { index in

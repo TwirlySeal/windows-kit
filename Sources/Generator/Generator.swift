@@ -9,22 +9,38 @@ struct Generator {
         
         // Enum
         try write(
-            type: database.types["Windows.System.Diagnostics.DevicePortal"]!["DevicePortalConnectionClosedReason"]!.first!
+            type: database.findTypeDef(
+                namespace: "Windows.System.Diagnostics.DevicePortal",
+                name: "DevicePortalConnectionClosedReason"
+            ),
+            metadata: database
         )
         
         // Enum (OptionSet)
         try write(
-            type: database.types["Windows.Media.Protection"]!["RevocationAndRenewalReasons"]!.first!
+            type: database.findTypeDef(
+                namespace: "Windows.Media.Protection",
+                name: "RevocationAndRenewalReasons"
+            ),
+            metadata: database
         )
         
         // Struct
         try write(
-            type: database.types["Windows.Management.Deployment"]!["DeploymentProgress"]!.first!
+            type: database.findTypeDef(
+                namespace: "Windows.Management.Deployment",
+                name: "DeploymentProgress"
+            ),
+            metadata: database
         )
         
         // Class with methods
         try write(
-            type: database.types["Windows.Storage"]!["StorageFile"]!.first!
+            type: database.findTypeDef(
+                namespace: "Windows.Storage",
+                name: "StorageFile"
+            ),
+            metadata: database
         )
     }
     
