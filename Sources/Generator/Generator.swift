@@ -5,43 +5,64 @@ import WinMD
 @main
 struct Generator {
     static func main() async throws {
-        let database = try await getDatabase()
+        var format = BasicFormat(handle: .standardOutput)
         
-        // Enum
-        try write(
-            type: database.findTypeDef(
-                namespace: "Windows.System.Diagnostics.DevicePortal",
-                name: "DevicePortalConnectionClosedReason"
-            ),
-            metadata: database
-        )
+        let decls = ["one", "two"]
         
-        // Enum (OptionSet)
-        try write(
-            type: database.findTypeDef(
-                namespace: "Windows.Media.Protection",
-                name: "RevocationAndRenewalReasons"
-            ),
-            metadata: database
-        )
+        let structure = CppStruct(name: "DeploymentProgress") {
+            CFunctionDecl(
+                name: "write",
+                returnType: "int"
+            )
+            
+            CFunctionDecl(
+                name: "read",
+                parameters: ["count"]
+            )
+            
+            for decl in decls {
+                CFunctionDecl(name: decl)
+            }
+        }
+        try structure.write(to: &format)
         
-        // Struct
-        try write(
-            type: database.findTypeDef(
-                namespace: "Windows.Management.Deployment",
-                name: "DeploymentProgress"
-            ),
-            metadata: database
-        )
-        
-        // Class with methods
-        try write(
-            type: database.findTypeDef(
-                namespace: "Windows.Storage",
-                name: "StorageFile"
-            ),
-            metadata: database
-        )
+//        let database = try await getDatabase()
+//        
+//        // Enum
+//        try write(
+//            type: database.findTypeDef(
+//                namespace: "Windows.System.Diagnostics.DevicePortal",
+//                name: "DevicePortalConnectionClosedReason"
+//            ),
+//            metadata: database
+//        )
+//        
+//        // Enum (OptionSet)
+//        try write(
+//            type: database.findTypeDef(
+//                namespace: "Windows.Media.Protection",
+//                name: "RevocationAndRenewalReasons"
+//            ),
+//            metadata: database
+//        )
+//        
+//        // Struct
+//        try write(
+//            type: database.findTypeDef(
+//                namespace: "Windows.Management.Deployment",
+//                name: "DeploymentProgress"
+//            ),
+//            metadata: database
+//        )
+//        
+//        // Class with methods
+//        try write(
+//            type: database.findTypeDef(
+//                namespace: "Windows.Storage",
+//                name: "StorageFile"
+//            ),
+//            metadata: database
+//        )
     }
     
     static let packageID = "Microsoft.Windows.SDK.Contracts"
