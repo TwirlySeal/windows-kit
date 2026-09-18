@@ -3,6 +3,8 @@
 import PackageDescription
 import CompilerPluginSupport
 
+let existentialAny: SwiftSetting = .enableUpcomingFeature("ExistentialAny")
+
 let package = Package(
     name: "windows-kit",
 
@@ -24,14 +26,16 @@ let package = Package(
                 .target(name: "Zip"),
                 .product(name: "SwiftSyntax", package: "swift-syntax"),
                 .product(name: "SwiftSyntaxBuilder", package: "swift-syntax"),
-            ]
+            ],
+            swiftSettings: [existentialAny],
         ),
         .target(
             name: "WinMD",
             dependencies: [
                 .product(name: "BinaryParsing", package: "swift-binary-parsing"),
                 .product(name: "Algorithms", package: "swift-algorithms"),
-            ]
+            ],
+            swiftSettings: [existentialAny],
         ),
         .target(
             name: "Zip",
@@ -39,8 +43,10 @@ let package = Package(
                 .product(name: "BinaryParsing", package: "swift-binary-parsing"),
             ],
             swiftSettings: [
+                existentialAny,
                 .enableExperimentalFeature("Lifetimes"),
             ]
         ),
-    ]
+    ],
+    swiftLanguageModes: [.v6]
 )
