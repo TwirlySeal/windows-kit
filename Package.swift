@@ -16,6 +16,7 @@ let package = Package(
         .package(url: "https://github.com/apple/swift-binary-parsing", "0.0.1"..<"0.1.0"),
         .package(url: "https://github.com/apple/swift-algorithms", from: "1.2.1"),
         .package(url: "https://github.com/swiftlang/swift-syntax.git", from: "602.0.0"),
+        .package(url: "https://github.com/apple/swift-system", from: "1.8.0"),
     ],
 
     targets: [
@@ -26,6 +27,7 @@ let package = Package(
                 .target(name: "Zip"),
                 .product(name: "SwiftSyntax", package: "swift-syntax"),
                 .product(name: "SwiftSyntaxBuilder", package: "swift-syntax"),
+                .product(name: "SystemPackage", package: "swift-system")
             ],
             swiftSettings: [existentialAny],
         ),

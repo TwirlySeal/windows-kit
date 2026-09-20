@@ -3,16 +3,14 @@ import Foundation
 // DSL for generating formatted C and C++ code
 // Inspired by SwiftSyntax
 
-struct BasicFormat {
+struct BasicFormat: ~Copyable {
     var level: Int = 0
-    let handle: FileHandle
+    var stream: FileOutputStream
     
     static let indentWidth = 4
     
     mutating func write(_ string: String) throws {
-        if let data = string.data(using: .utf8) {
-            try handle.write(contentsOf: data)
-        }
+        try stream.write(string)
     }
     
     mutating func writeLine(_ text: String? = nil) throws {
@@ -33,18 +31,26 @@ struct BasicFormat {
         try body(&self)
         level -= 1
     }
+    
+    consuming func flush() throws {
+        try stream.flush()
+    }
+    
+    consuming func close() throws {
+        try stream.close()
+    }
 }
 
 protocol CxxSyntax {
-    func write(to format: inout BasicFormat) throws
+    func write(with format: inout BasicFormat) throws
 }
 
 struct CxxBlock: CxxSyntax {
     let components: [any CxxSyntax]
 
-    func write(to format: inout BasicFormat) throws {
+    func write(with format: inout BasicFormat) throws {
         for component in components {
-            try component.write(to: &format)
+            try component.write(with: &format)
         }
     }
 }
@@ -72,7 +78,6 @@ enum CxxSyntaxBuilder {
     }
 }
 
-
 struct CppStruct: CxxSyntax {
     let name: String
     let members: any CxxSyntax
@@ -82,10 +87,10 @@ struct CppStruct: CxxSyntax {
         self.members = members()
     }
 
-    func write(to format: inout BasicFormat) throws {
+    func write(with format: inout BasicFormat) throws {
         try format.writeLine("struct \(name) {")
         try format.indented { format in
-            try members.write(to: &format)
+            try members.write(with: &format)
         }
         try format.writeLine("};")
     }
@@ -96,7 +101,7 @@ struct CFunctionDecl: CxxSyntax {
     var returnType: String = "void"
     var parameters: [String] = []
 
-    func write(to format: inout BasicFormat) throws {
+    func write(with format: inout BasicFormat) throws {
         let params = parameters.joined(separator: ", ")
         try format.writeLine("\(returnType) \(name)(\(params));")
     }

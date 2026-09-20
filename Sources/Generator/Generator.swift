@@ -5,10 +5,7 @@ import WinMD
 @main
 struct Generator {
     static func main() async throws {
-        var format = BasicFormat(handle: .standardOutput)
-        
         let decls = ["one", "two"]
-        
         let structure = CppStruct(name: "DeploymentProgress") {
             CFunctionDecl(
                 name: "write",
@@ -24,7 +21,10 @@ struct Generator {
                 CFunctionDecl(name: decl)
             }
         }
-        try structure.write(to: &format)
+
+        var format = BasicFormat(stream: .standardOutput())
+        try structure.write(with: &format)
+        try format.flush()
         
 //        let database = try await getDatabase()
 //        
