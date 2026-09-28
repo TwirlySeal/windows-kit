@@ -19,9 +19,9 @@ enum DeflateError: Error {
     case invalidDistancePointer
 }
 
-let fixedLiteralDecoder = CanonicalHuffmanDecoder.fixedLiteralDecoder()
+let fixedLiteralLengthDecoder = CanonicalHuffmanDecoder.makeFixedLiteralLength()
 
-let fixedDistanceDecoder = CanonicalHuffmanDecoder.fixedDistanceDecoder()
+let fixedDistanceDecoder = CanonicalHuffmanDecoder.makeFixedDistance()
 
 public func parseDeflate(span: Span<UInt8>, uncompressedSize: Int) throws -> Data {
     var bitSpan = try BitSpan(span: span)
@@ -29,12 +29,12 @@ public func parseDeflate(span: Span<UInt8>, uncompressedSize: Int) throws -> Dat
     return try Data(capacity: uncompressedSize) { outputSpan in
         var isFinalBlock = false
         while !isFinalBlock {
-            isFinalBlock = try parseDeflateBlock(span: &bitSpan, output: &outputSpan)
+            isFinalBlock = try parseDeflateBlock(reading: &bitSpan, output: &outputSpan)
         }
     }
 }
 
-func parseDeflateBlock(span: inout BitSpan, output: inout OutputSpan<UInt8>) throws -> Bool {
+func parseDeflateBlock(reading span: inout BitSpan, output: inout OutputSpan<UInt8>) throws -> Bool {
     // BFINAL
     let isFinalBlock = try UInt8(reading: &span, bitCount: 1) == 1
     // BTYPE
@@ -59,7 +59,7 @@ func parseDeflateBlock(span: inout BitSpan, output: inout OutputSpan<UInt8>) thr
         try processHuffmanBlock(
             span: &span,
             output: &output,
-            literalDecoder: fixedLiteralDecoder,
+            literalDecoder: fixedLiteralLengthDecoder,
             distanceDecoder: fixedDistanceDecoder
         )
         
@@ -90,7 +90,7 @@ func parseDeflateBlock(span: inout BitSpan, output: inout OutputSpan<UInt8>) thr
         
         let literalLengthLengths = Array(allLengths[0..<numLiteralLengthCodes])
         
-        guard let literalDecoder = try CanonicalHuffmanDecoder(lengths: literalLengthLengths) else {
+        guard let literalLengthDecoder = try CanonicalHuffmanDecoder(lengths: literalLengthLengths) else {
             throw DeflateError.emptyLiteralTree
         }
         
@@ -101,7 +101,7 @@ func parseDeflateBlock(span: inout BitSpan, output: inout OutputSpan<UInt8>) thr
         try processHuffmanBlock(
             span: &span,
             output: &output,
-            literalDecoder: literalDecoder,
+            literalDecoder: literalLengthDecoder,
             distanceDecoder: distanceDecoder
         )
     }
@@ -115,7 +115,7 @@ func processHuffmanBlock(
     distanceDecoder: CanonicalHuffmanDecoder?
 ) throws {
     while true {
-        let symbol = try literalDecoder.decode(span: &span)
+        let symbol = try literalDecoder.decode(reading: &span)
         
         switch symbol {
         case 0...255:
@@ -132,7 +132,7 @@ func processHuffmanBlock(
             }
             
             let matchLength = try decodeMatchLength(symbol: symbol, from: &span)
-            let distanceSymbol = try distanceDecoder.decode(span: &span)
+            let distanceSymbol = try distanceDecoder.decode(reading: &span)
             let matchDistance = try decodeMatchDistance(symbol: distanceSymbol, from: &span)
             
             guard matchDistance <= output.count else {
@@ -148,7 +148,7 @@ func processHuffmanBlock(
             //
             // You copy them one byte at a time. As you copy a, b, and c, they are
             // appended to the buffer, meaning they become available to be read again
-            // for the next 3 bytes. The output naturally becomes 'abcabc'.
+            // for the next 3 bytes. The output becomes 'abcabc'.
             
             let readStartIndex = output.count - matchDistance
             for i in 0..<matchLength {
@@ -164,12 +164,16 @@ func processHuffmanBlock(
 }
 
 // Run-Length Encoding
-func decodeCodeLengths(count: Int, using tree: borrowing CanonicalHuffmanDecoder, from span: inout BitSpan) throws -> [Int] {
+func decodeCodeLengths(
+    count: Int,
+    using tree: borrowing CanonicalHuffmanDecoder,
+    from span: inout BitSpan
+) throws -> [Int] {
     var codeLengths = [Int]()
     codeLengths.reserveCapacity(count)
     
     while codeLengths.count < count {
-        let symbol = try tree.decode(span: &span)
+        let symbol = try tree.decode(reading: &span)
         
         switch symbol {
         case 0...15:

@@ -70,14 +70,21 @@ struct Generator {
     static let cacheDirectoryName = ".winmd-cache"
     
     static func getDatabase() async throws -> MetadataDB {
-        let cachePath = URL(fileURLWithPath: FileManager.default.currentDirectoryPath)
-            .appending(
-                components: cacheDirectoryName, packageID, packageVersion,
-                directoryHint: .isDirectory
-            )
+        let cachePath = URL(
+            fileURLWithPath: FileManager.default.currentDirectoryPath
+        ).appending(
+            components: cacheDirectoryName, packageID, packageVersion,
+            directoryHint: .isDirectory
+        )
         
-        try FileManager.default.createDirectory(at: cachePath, withIntermediateDirectories: true)
-        let successPath = cachePath.appending(component: ".success", directoryHint: .notDirectory)
+        try FileManager.default.createDirectory(
+            at: cachePath,
+            withIntermediateDirectories: true
+        )
+        let successPath = cachePath.appending(
+            component: ".success",
+            directoryHint: .notDirectory
+        )
         
         if FileManager.default.fileExists(atPath: successPath.path()) {
             let metadataFileURLs = try FileManager.default.contentsOfDirectory(
@@ -100,28 +107,29 @@ struct Generator {
     
     static func databaseFromNuGet(cachePath: URL) async throws -> MetadataDB {
         print("Locating package: \(packageID)")
-        let packageResourceURL = try await getPackageDownloadURL(packageID: packageID, packageVersion: packageVersion)
+        let packageResourceURL = try await getPackageDownloadURL(
+            packageID: packageID,
+            packageVersion: packageVersion
+        )
 
         print("Downloading \(packageID) \(packageVersion)")
-        let contents = try await download(url: packageResourceURL)
+        let zipData = try await download(url: packageResourceURL)
         
         print("Extracting nupkg")
-        let cdEntries = try parseZip(from: contents.span)
+        let zipEntries = try parseZip(from: zipData.span)
         
         var metadataFiles = [MetadataFile]()
-        metadataFiles.reserveCapacity(cdEntries.count)
-        for entry in cdEntries {
-            guard entry.fileName.hasPrefix("ref/netstandard2.0"),
-                  entry.fileName.hasSuffix(".winmd") else {
+        for entry in zipEntries {
+            // Some WinMD files have uppercase letters in the file extension,
+            // like `Windows.WinMD` in `Microsoft.Windows.SDK.Contracts`
+            guard entry.fileName.lowercased().hasSuffix(".winmd") else {
                 continue
             }
             
-            let zipEntry = try ZipEntry(span: contents.span, centralDirectoryEntry: entry)
-            
-            let filename = URL(filePath: zipEntry.fileName).lastPathComponent
+            let filename = URL(filePath: entry.fileName).lastPathComponent
             let destination = cachePath.appending(component: filename)
             
-            let data = try zipEntry.extract()
+            let data = try entry.extract(from: zipData.span)
             try data.write(to: destination)
             
             metadataFiles.append(try MetadataFile(parsing: data))

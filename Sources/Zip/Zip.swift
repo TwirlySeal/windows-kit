@@ -35,7 +35,7 @@ enum ZipError: Error {
     case invalidLocalHeaderSignature
 }
 
-public func parseZip(from byteSpan: borrowing Span<UInt8>) throws -> [CentralDirectoryEntry] {
+public func parseZip(from byteSpan: borrowing Span<UInt8>) throws -> [ZipEntry] {
 	guard let eocdOffset = findEOCD(span: byteSpan) else {
 		throw ZipError.noCentralDirectory
 	}
@@ -56,7 +56,7 @@ public func parseZip(from byteSpan: borrowing Span<UInt8>) throws -> [CentralDir
 	var centralDirectorySpan = try span.sliceSpan(byteCount: centralDirectorySize)
 
     let zipEntries = try Array(count: Int(numberOfEntries)) {
-        try CentralDirectoryEntry(parsing: &centralDirectorySpan)
+        try ZipEntry(parsing: &centralDirectorySpan)
     }
     return zipEntries
 }
@@ -72,7 +72,7 @@ struct GeneralFlags: OptionSet {
 	static let encrypted = Self(rawValue: 1)
 }
 
-public struct CentralDirectoryEntry {
+public struct ZipEntry {
 	let compressionMethod: CompressionMethod
 	let crc32Checksum: UInt32
 	let compressedSize: UInt32
@@ -96,7 +96,9 @@ public struct CentralDirectoryEntry {
 			throw ZipError.encrypted
 		}
 
-		guard let compressionMethod = CompressionMethod(rawValue: try UInt16(parsingLittleEndian: &span)) else {
+		guard let compressionMethod = CompressionMethod(
+            rawValue: try UInt16(parsingLittleEndian: &span)
+        ) else {
 			throw ZipError.unsupportedCompressionMethod
 		}
 		self.compressionMethod = compressionMethod
@@ -123,45 +125,37 @@ public struct CentralDirectoryEntry {
 		self.fileName = try String(parsingUTF8: &span, count: Int(fileNameLength))
 		try span.seek(toRelativeOffset: extraFieldLength + fileCommentLength) // skip
 	}
-}
-
-public struct ZipEntry: ~Copyable, ~Escapable {
-    private let span: Span<UInt8>
-    private let centralDirectoryEntry: CentralDirectoryEntry
     
-    public var fileName: String {
-        centralDirectoryEntry.fileName
-    }
-    
-    @_lifetime(copy span)
-    public init(span: Span<UInt8>, centralDirectoryEntry: CentralDirectoryEntry) throws {
-        self.centralDirectoryEntry = centralDirectoryEntry
-        
+    public func extract(from span: Span<UInt8>) throws -> Data {
         var parser = ParserSpan(span.bytes)
-        try parser.seek(toAbsoluteOffset: centralDirectoryEntry.localHeaderOffset)
+        try parser.seek(toAbsoluteOffset: localHeaderOffset)
         guard try UInt32(parsingLittleEndian: &parser) == 0x04034b50 else {
             throw ZipError.invalidLocalHeaderSignature
         }
         // Skip other fields
         try parser.seek(toRelativeOffset: 22)
         
+        // The spec allows the extra field to differ between the local file header and
+        // central directory record, so we read the length here instead of trusting
+        // that it is the same. We also read the filename length to be defensive.
         let fileNameLength = try UInt16(parsingLittleEndian: &parser)
         let extraFieldLength = try UInt16(parsingLittleEndian: &parser)
         
         try parser.seek(toRelativeOffset: fileNameLength + extraFieldLength)
         let start = parser.startPosition
-        let end = start + Int(centralDirectoryEntry.compressedSize)
-        self.span = span.extracting(start..<end)
-    }
-    
-    public func extract() throws -> Data {
-        switch centralDirectoryEntry.compressionMethod {
+        let end = start + Int(compressedSize)
+        let dataSpan = span.extracting(start..<end)
+        
+        switch compressionMethod {
         case .stored:
-            return try Data(capacity: Int(centralDirectoryEntry.uncompressedSize)) { outputSpan in
-                try span.copy(to: &outputSpan)
+            return try Data(capacity: Int(uncompressedSize)) { outputSpan in
+                try dataSpan.copy(to: &outputSpan)
             }
         case .deflate:
-            return try parseDeflate(span: self.span, uncompressedSize: Int(centralDirectoryEntry.uncompressedSize))
+            return try parseDeflate(
+                span: dataSpan,
+                uncompressedSize: Int(uncompressedSize)
+            )
         }
     }
 }

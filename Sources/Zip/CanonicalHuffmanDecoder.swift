@@ -188,7 +188,7 @@ struct CanonicalHuffmanDecoder {
         return result
     }
     
-    func decode(span: inout BitSpan) throws -> Int {
+    func decode(reading span: inout BitSpan) throws -> Int {
         let chunk = try Int(peekingAtMost: &span, bitCount: Self.chunkBits)
         
         switch self.primaryTable[chunk] {
@@ -218,7 +218,7 @@ struct CanonicalHuffmanDecoder {
         }
     }
     
-    static func fixedLiteralDecoder() -> Self {
+    static func makeFixedLiteralLength() -> Self {
         var lengths = [Int](repeating: 0, count: 288)
         
         for i in 0...143 {
@@ -236,7 +236,7 @@ struct CanonicalHuffmanDecoder {
         return try! self.init(lengths: lengths)!
     }
     
-    static func fixedDistanceDecoder() -> Self {
+    static func makeFixedDistance() -> Self {
         let lengths = [Int](repeating: 5, count: 32)
         return try! self.init(lengths: lengths)!
     }
