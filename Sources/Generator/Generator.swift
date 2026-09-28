@@ -5,71 +5,94 @@ import WinMD
 @main
 struct Generator {
     static func main() async throws {
-        let decls = ["one", "two"]
-        let structure = CppStruct(name: "DeploymentProgress") {
-            CFunctionDecl(
-                name: "write",
-                returnType: "int"
-            )
-            
-            CFunctionDecl(
-                name: "read",
-                parameters: ["count"]
-            )
-            
-            for decl in decls {
-                CFunctionDecl(name: decl)
-            }
-        }
+//        let decls = ["one", "two"]
+//        let structure = CppStruct(name: "DeploymentProgress") {
+//            CFunctionDecl(
+//                name: "write",
+//                returnType: "int"
+//            )
+//            
+//            CFunctionDecl(
+//                name: "read",
+//                parameters: ["count"]
+//            )
+//            
+//            for decl in decls {
+//                CFunctionDecl(name: decl)
+//            }
+//        }
 
-        var format = BasicFormat(stream: .standardOutput())
-        try structure.write(with: &format)
-        try format.flush()
+//        var format = BasicFormat(stream: .standardOutput())
+//        try structure.write(with: &format)
+//        try format.flush()
         
-//        let database = try await getDatabase()
-//        
-//        // Enum
-//        try write(
-//            type: database.findTypeDef(
-//                namespace: "Windows.System.Diagnostics.DevicePortal",
-//                name: "DevicePortalConnectionClosedReason"
-//            ),
-//            metadata: database
-//        )
-//        
-//        // Enum (OptionSet)
-//        try write(
-//            type: database.findTypeDef(
-//                namespace: "Windows.Media.Protection",
-//                name: "RevocationAndRenewalReasons"
-//            ),
-//            metadata: database
-//        )
-//        
-//        // Struct
-//        try write(
-//            type: database.findTypeDef(
-//                namespace: "Windows.Management.Deployment",
-//                name: "DeploymentProgress"
-//            ),
-//            metadata: database
-//        )
-//        
-//        // Class with methods
-//        try write(
-//            type: database.findTypeDef(
-//                namespace: "Windows.Storage",
-//                name: "StorageFile"
-//            ),
-//            metadata: database
-//        )
+        var metadataFiles = try await getMetadataPackage(
+            packageID: "Microsoft.Windows.SDK.Contracts",
+            packageVersion: "10.0.28000.2705"
+        )
+        metadataFiles.append(
+            contentsOf: try await getMetadataPackage(
+                packageID: "Microsoft.Windows.SDK.Win32Metadata",
+                packageVersion: "71.0.26-preview"
+            )
+        )
+        metadataFiles.append(
+            contentsOf: try await getMetadataPackage(
+                packageID: "Microsoft.Windows.WDK.Win32Metadata",
+                packageVersion: "0.13.25-experimental"
+            )
+        )
+        metadataFiles.append(
+            contentsOf: try await getMetadataPackage(
+                packageID: "Microsoft.WindowsAppSDK",
+                packageVersion: "2.5.1"
+            )
+        )
+        let database = try MetadataDB(files: metadataFiles)
+        
+        // Enum
+        try write(
+            type: database.findTypeDef(
+                namespace: "Windows.System.Diagnostics.DevicePortal",
+                name: "DevicePortalConnectionClosedReason"
+            ),
+            metadata: database
+        )
+        
+        // Enum (OptionSet)
+        try write(
+            type: database.findTypeDef(
+                namespace: "Windows.Media.Protection",
+                name: "RevocationAndRenewalReasons"
+            ),
+            metadata: database
+        )
+        
+        // Struct
+        try write(
+            type: database.findTypeDef(
+                namespace: "Windows.Management.Deployment",
+                name: "DeploymentProgress"
+            ),
+            metadata: database
+        )
+        
+        // Class with methods
+        try write(
+            type: database.findTypeDef(
+                namespace: "Windows.Storage",
+                name: "StorageFile"
+            ),
+            metadata: database
+        )
     }
     
-    static let packageID = "Microsoft.Windows.SDK.Contracts"
-    static let packageVersion = "10.0.28000.1721"
     static let cacheDirectoryName = ".winmd-cache"
     
-    static func getDatabase() async throws -> MetadataDB {
+    static func getMetadataPackage(
+        packageID: String,
+        packageVersion: String
+    ) async throws -> [MetadataFile] {
         let cachePath = URL(
             fileURLWithPath: FileManager.default.currentDirectoryPath
         ).appending(
@@ -97,15 +120,23 @@ struct Generator {
                 return try MetadataFile(parsing: data)
             }
             
-            return try MetadataDB(files: metadataFiles)
+            return metadataFiles
         } else {
-            let database = try await databaseFromNuGet(cachePath: cachePath)
+            let metadataFiles = try await fetchMetadataPackage(
+                cachePath,
+                packageID,
+                packageVersion
+            )
             FileManager.default.createFile(atPath: successPath.path(), contents: nil)
-            return database
+            return metadataFiles
         }
     }
     
-    static func databaseFromNuGet(cachePath: URL) async throws -> MetadataDB {
+    static func fetchMetadataPackage(
+        _ cachePath: URL,
+        _ packageID: String,
+        _ packageVersion: String
+    ) async throws -> [MetadataFile] {
         print("Locating package: \(packageID)")
         let packageResourceURL = try await getPackageDownloadURL(
             packageID: packageID,
@@ -135,6 +166,6 @@ struct Generator {
             metadataFiles.append(try MetadataFile(parsing: data))
         }
         
-        return try MetadataDB(files: metadataFiles)
+        return metadataFiles
     }
 }
