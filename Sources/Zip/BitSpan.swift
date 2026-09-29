@@ -6,9 +6,11 @@ enum BitError: Error {
 public struct BitSpan: ~Copyable, ~Escapable {
     private let span: Span<UInt8>
     
-    private var byteOffset: Int = 0
+    /// The byte index within the span
+    private(set) var byteOffset: Int = 0
+    
     /// The bit index within the current byte (0..<8)
-    private var bitOffset: Int = 0
+    private(set) var bitOffset: Int = 0
     
     @_lifetime(copy span)
     public init(span: Span<UInt8>) throws {
@@ -18,6 +20,11 @@ public struct BitSpan: ~Copyable, ~Escapable {
         self.span = span
     }
     
+    /// The bytes from the current byte offset to the end of the span
+    ///
+    /// Does not check for or perform alignment; the whole current byte
+    /// (including previously read bits if the bit offset is non-zero) is
+    /// included
     var bytes: Span<UInt8> {
         @_lifetime(copy self)
         borrowing get {
@@ -38,7 +45,7 @@ public struct BitSpan: ~Copyable, ~Escapable {
         }
     }
     
-    /// Does not align to byte boundary
+    /// Does not align to a byte boundary; the bit offset remains the same
     mutating func seek(toRelativeByteOffset relativeByteOffset: Int) throws {
         let targetByteOffset = self.byteOffset + relativeByteOffset
         
